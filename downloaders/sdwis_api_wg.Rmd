@@ -1,0 +1,93 @@
+---
+title: "SDWIS API Tips"
+author: "Walker Grimshaw"
+date: '2022-06-30'
+output: pdf_document
+geometry: margin=2.54cm
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(data.table)
+library(tidyverse)
+library(sf)
+library(raster)
+library(readxl)
+library(fs)
+library(stringi)
+library(lubridate)
+library(units)
+library(plotly)
+library(cowplot)
+library(openxlsx)
+library(xml2)
+library(tictoc)
+```
+
+## Basics and Other Resources
+
+EPA does supply some information on using their API to request SDWIS and other data. These pages have basic descriptions of the service and a few example urls for requesting data.
+
+https://www.epa.gov/enviro/envirofacts-data-service-api
+https://www.epa.gov/enviro/envirofacts-model
+https://www.epa.gov/enviro/sdwis-model
+
+The basic structure to download data is to create a url beginning with "https://data.epa.gov/efservice/" and followed by items separated by / to specify what you are requesting.
+
+## Size of API request
+
+Depending on the number of rows your request will return, you may want to structure your request differently. Only 100,000 records can be requested at one time. To learn the number of records in your request, end the url with /count. The code chunk below returns the number of records requested in the url.
+
+```{r count}
+url <- "https://data.epa.gov/efservice/WATER_SYSTEM/count"
+
+n_records_xml <- read_xml(url)
+
+n_records_tb <- unnest_longer(as_list(n_records_xml), col = Envirofacts)
+
+n_records <- as.numeric(n_records$Envirofacts)
+```
+
+## Water System Detail Request
+
+The code below requests the first 10 records of water system details, forcing all columns to be characters so there are no problems combining data frames later. Below that is a for loop to download all water system records. The tic() and toc() commands are just to know how long the operations are taking to run and will print in the console.
+
+```{r}
+## example to read first ten records
+
+water_systems <- fread("https://data.epa.gov/efservice/WATER_SYSTEM/ROWS/0:9/csv",
+                       colClasses = "character")
+
+## Read all records
+water_systems <- fread("https://data.epa.gov/efservice/WATER_SYSTEM/ROWS/0:99999/csv",
+                       colClasses = "character")
+
+for (i in 1:(ceiling(n_records/1e5)-1)) {
+  print("base_url")
+  base_url <- "https://data.epa.gov/efservice/WATER_SYSTEM/ROWS/"
+  print("temp_url")
+  temp_url <- paste0(base_url,
+                     as.character(i*100000),
+                     ":",
+                     i*100000 + 99999,
+                     "/CSV")
+  print("dat")
+  dat <- fread(temp_url, colClasses = "character")
+  print("rowbind")
+  water_systems <- bind_rows(water_systems, dat)
+  print(i)
+}
+```
+
+## Active Community Water System Detail Request
+
+We can filter these systems after reading the data for all systems to have ever existed (more than 400,000 records), or we can filter the request in the url. To do so, after the name of the table (in this case WATER_SYSTEM), add / then the name of the column you want to filter by, another / and the value of that column for the filter. The code below downloads records for all active community water systems, the subset of all systems that we are trying to map.
+
+```{r}
+
+active_cws <- fread("https://data.epa.gov/efservice/WATER_SYSTEM/PWS_ACTIVITY_CODE/A/PWS_TYPE_CODE/CWS/ROWS/0:99999/CSV", colClasses = "character")
+
+```
