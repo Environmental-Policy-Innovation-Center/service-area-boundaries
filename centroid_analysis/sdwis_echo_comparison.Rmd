@@ -1,0 +1,1 @@
+## This file compares the use of ECHO centroids with geocoded SDWIS addresses to create the most accurate service area boundary approximations
