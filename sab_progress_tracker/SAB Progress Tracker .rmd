@@ -1,0 +1,107 @@
+---
+title: "SAB Progress Tracker"
+author: "Aashna Sawhney"
+date: "7/27/2022"
+output: pdf_document
+---
+
+Compare the latest national data set to previous versions!
+
+```{r load-packages, echo=FALSE, message = FALSE, warning = FALSE}
+library(tidyverse)
+library(sf)
+library(dplyr)   
+```
+
+```{r load-data, results = FALSE, warning= FALSE, message = FALSE}
+SAB_1 <-st_read("https://www.hydroshare.org/resource/6f3386bb4bc945028391cfabf1ea252e/data/contents/temm_layer_v1.0.0/temm.geojson")
+```
+
+```{r load-data-version-2, results = FALSE, warning= FALSE, message = FALSE}
+SAB_2<-st_read("https://www.hydroshare.org/resource/20b908d73a784fc1a097a3b3f2b58bfb/data/contents/temm.geojson")
+```
+
+```{r filter-data, echo= FALSE}
+SAB_1b<- SAB_1 %>%
+  st_set_geometry(NULL)
+
+SAB_2b <-SAB_2 %>%
+  st_set_geometry(NULL)
+
+SAB_1b <- SAB_1b %>%
+  select(pwsid, pws_name, population_served_count, tier) 
+
+SAB_2b <- SAB_2b %>%
+  select(pwsid, pws_name, population_served_count, tier)
+
+```
+
+
+```{r new-col-SAB_2, echo= FALSE}
+SAB_2b <- SAB_2b %>%
+ rename(Tier_V2= tier)
+
+SAB_1b <- SAB_1b %>%
+  rename(Tier_V1=tier)
+```
+
+
+```{r join, echo= FALSE}
+all_SAB<-left_join(SAB_2b, SAB_1b, by="pwsid")
+```
+
+
+```{r creater-tiers, echo= FALSE}
+all_SAB<-all_SAB %>%
+mutate(tier_change = case_when(Tier_V1 == "Tier 3" & Tier_V2 == "Tier 1" ~ "Tier 3 to 1",
+                                 Tier_V1 == "Tier 2a" & Tier_V2 == "Tier 1" ~ "Tier 2a to 1",
+                              Tier_V1=="Tier 2b" & Tier_V2=="Tier 1" ~ "Tier 2b to 1",
+                            Tier_V1=="Tier 2b" & Tier_V2== "Tier 2a" ~ "Tier 2b to 2a",
+                              Tier_V1=="Tier 2b" & Tier_V2=="Tier 3" ~ "Tier 2b to 3", 
+                              Tier_V1=="Tier 3" & Tier_V2=="Tier 2b" ~ "Tier 3 to 2b",
+                              Tier_V1=="Tier 3" & Tier_V2=="Tier 2a" ~ "Tier 3 to 2a",
+                               Tier_V2== "none" ~ "Without Tier",
+                           is.na(Tier_V1) & Tier_V2== "Tier 1" ~ "New Tier 1",
+                            is.na(Tier_V1) & Tier_V2== "Tier 2a" ~ "New Tier 2",
+                            is.na(Tier_V1) & Tier_V2== "Tier 3" ~ "New Tier 3",
+                              TRUE ~ "NULL"))
+
+```
+
+```{r count}
+all_SAB %>%
+  count(Tier_V2)
+```
+
+
+```{r total_pop}
+all_SAB_population <- all_SAB %>%
+group_by(Tier_V2) %>%
+summarize(total_pop = sum(population_served_count.x))
+```
+
+
+
+```{r population-by-tier}
+all_SAB_summary <- all_SAB %>%
+group_by(tier_change) %>%
+summarize(total_pop = sum(population_served_count.x),
+          Total_Systems = n())
+  
+```
+
+
+Here we can see how many systems have moved between tiers as well as entirely new systems:
+
+```{r create-table, echo= FALSE}
+Tier_Changes<-all_SAB %>%
+count(tier_change)
+
+Tier_Changes <-Tier_Changes %>%
+   rename("Tier Changes" =tier_change) %>%
+   rename("System Number"= n)
+Tier_Changes
+```
+
+
+
