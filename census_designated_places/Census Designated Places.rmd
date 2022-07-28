@@ -1,0 +1,2254 @@
+---
+title: "Census Designated Places"
+author: "Aashna Sawhney"
+date: "7/27/2022"
+output: pdf_document
+---
+
+##Loading Data and Packages
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+options(scipen = 999)
+```
+
+```{r load-packages}
+library(tidyverse)
+library(sf)
+library(tigris)
+library(ggplot2)
+options(tigris_use_cache="TRUE")
+```
+
+```{r load-swtizer-data}
+fixed_utilities<- st_read("~/EPIC/David Switzer's Service Area Dataset/Switzer Shapefile/FixedUtilities.shp")
+```
+
+```{r census-shapefile}
+census_designated_places <- places(state= NULL, cb = TRUE, year=2021) %>%
+  arrange(STATE_NAME)
+```
+
+```{r arr-utilities}
+fixed_utilities<-fixed_utilities %>%
+  arrange("PSWID")
+```
+
+
+```{r plot-cdp}
+ggplot(census_designated_places)+
+  geom_sf()+
+  labs(title= "CDPs")
+```
+
+
+```{r plot-fixed_utlities}
+ggplot(fixed_utilities) +
+  geom_sf()+
+  labs(title="Fixed Utilities")
+```
+
+
+##FLORIDA##
+
+```{r census-FL}
+census_FL <- places(state= "FL", cb = TRUE, year=2021) 
+```
+
+```{r fixed-FL}
+fixed_FL<-fixed_utilities %>%
+  filter(str_detect(PWSID,"FL")) %>%
+  filter(PWSID %in% c("FL1370655", "FL2100741", "FL2161328", "FL3050442", "FL3314052", "FL3480962", "FL3484132", "FL4060486", "FL4060925", "FL4500145", "FL4501559", "FL4504393", "FL4560954", "FL5084100", "FL5114069", "FL5360325", "FL6290327", "FL6411132", "FL6511361", "FL6520336", "FL6521405", "FL6521715", "FL6531014", "FL6581591"))
+```
+
+
+
+```{r FL}
+fixed_FL<-fixed_FL %>%
+  mutate(System_Area=st_area(fixed_FL))
+
+census_FL<-census_FL %>%
+  mutate(Census_Area=st_area(census_FL))
+```
+
+```{r intersect-FL}
+intersection_FL <- st_intersection(census_FL, fixed_FL) 
+```
+
+
+##```{r plot-FL}
+ggplot()+
+  geom_sf(color="green", data=census_FL_6, fill="transparent") 
+  # geom_sf(color="pink", data=fixed_FL_1, fill="transparent") 
+```
+
+##```{r plot-intersection-FL}
+ggplot() +
+      geom_sf(color="seagreen", data=intersection_FL)
+      
+
+
+```{r FL-intersect}
+sf::sf_use_s2(FALSE)
+intersection_FL<-intersection_FL %>%
+  mutate(Intersection_Area=st_area(intersection_FL))
+```
+
+
+```{r group-intersection-by-PWSID-FL}
+intersection_area_FL <- intersection_FL %>%
+  group_by(PWSID) %>%
+  mutate(Sum_Intersection_Area=sum(Intersection_Area))
+
+intersection_area_FL_1<- intersection_area_FL %>%
+  st_set_geometry(NULL)
+  
+```
+
+
+```{r join}
+census_FL$geometry <- NULL
+combined_data<-inner_join(intersection_area_FL, census_FL, by="PLACEFP")
+```
+
+```{r create_division_columns}
+combined_data <- combined_data %>%
+  mutate(pct_system=Intersection_Area/System_Area) %>%
+mutate(pct_census=Intersection_Area/Census_Area.x) %>%
+mutate("Census Area Boundary"=if_else("pct_census" > 0.98 & "pct_system" > 0.98, "True", "False"))
+```
+
+
+#FL6531014
+
+```{r filter-FL}
+combined_data_1 <- combined_data %>%
+  filter(PWSID=="FL6531014") 
+```
+
+Census Area Boundary.
+
+#FL3050442
+
+```{r census_FL_2}
+combined_data_2 <- combined_data %>%
+   filter(PWSID=="FL3050442") 
+```
+
+Unknown- Not Census Area Boundary. 
+
+
+#FL4560954
+
+```{r census_FL_3 }
+combined_data_3 <- combined_data %>%
+  filter(PWSID=="FL4560954")
+```
+
+Census Area Boundary. 
+
+------------
+#FL6290327
+
+```{r combined_4}
+combined_data_4 <- combined_data %>%
+  filter(PWSID=="FL6290327") 
+```
+
+Unknown-Not Census Area Boundary. 
+
+
+#FL4060925
+
+```{r combined-FL-5}
+combined_data_5 <- combined_data %>%
+  filter(PWSID=="FL4060925") 
+```
+
+Census Area Boundary. 
+
+#FL5360325
+
+```{r combined-FL-6 }
+combined_data_6 <- combined_data %>%
+  filter(PWSID=="FL5360325") 
+```
+
+Census Area Boundary. 
+
+
+#FL4501559
+
+```{r combined-FL-7}
+combined_data_7 <- combined_data %>%
+  filter(PWSID=="FL4501559") 
+```
+
+Census Area Boundary. 
+
+ 
+#FL3480962
+
+```{r combined_FL_8}
+combined_data_8 <- combined_data %>%
+  filter(PWSID=="FL3480962") 
+```
+Census Area Boundary. 
+
+#FL6520336
+
+```{r combined_FL_9}
+combined_data_9 <- combined_data %>%
+  filter(PWSID=="FL6520336") 
+```
+Unknown- Not Census Area Boundary 
+ 
+
+#FL1370655
+
+```{r intersection_10}
+combined_data_10 <- combined_data %>%
+  filter(PWSID=="FL1370655")
+```
+
+Census Area Boundary. 
+
+#FL6521715
+
+```{r combined-11-FL}
+combined_data_11 <- combined_data %>%
+  filter(PWSID=="FL6521715")
+```
+
+Unknown- Not Census Area Boundary.
+
+#FL4060486
+```{r combined-12-FL}
+combined_data_12 <- combined_data %>%
+  filter(PWSID=="FL4060486")
+```
+
+Census Area Boundary
+
+#FL4500145
+
+```{r combined-13-FL}
+combined_data_13 <- combined_data %>%
+  filter(PWSID=="FL4500145")
+```
+
+Census Area Boundary
+
+#FL2161328
+```{r combined-14-FL}
+combined_data_14 <- combined_data %>%
+  filter(PWSID=="FL2161328")
+```
+
+Unknown - Not Census Boundary
+
+#FL3484132
+```{r combined-15-FL}
+combined_data_15 <- combined_data %>%
+  filter(PWSID=="FL3484132")
+```
+
+Unknown- Not Census Area Boundary
+
+#FL6521405
+```{r combined-16-FL}
+combined_data_16 <- combined_data %>%
+  filter(PWSID=="FL6521405")
+```
+
+Unknown- Not Census Area Boundary
+
+#FL6581591
+```{r combined-17-FL}
+combined_data_17 <- combined_data %>%
+  filter(PWSID=="FL6581591")
+```
+
+Unknown- Not Census Area Boundary
+
+#FL5084100
+```{r ombined-18-FL}
+combined_data_18 <- combined_data %>%
+  filter(PWSID=="FL5084100")
+```
+
+Unknown- Not Census Area Boundary
+
+#FL5114069
+```{r combined-19-FL}
+combined_data_19 <- combined_data %>%
+  filter(PWSID=="FL5114069")
+```
+
+Unknown- Not Census Area Boundary
+
+#FL3314052
+```{r combined-20-FL}
+combined_data_20 <- combined_data %>%
+  filter(PWSID=="FL3314052")
+```
+
+Unknown- Not Census Area Boundary
+
+#FL6411132
+```{r combined-21-FL}
+combined_data_21 <- combined_data %>%
+  filter(PWSID=="FL6411132")
+```
+
+Unknown- Not Census Area Boundary
+
+#FL4504393
+```{r combined-22-FL}
+combined_data_22 <- combined_data %>%
+  filter(PWSID=="FL4504393")
+```
+
+Unknown- Not Census Area Boundary
+
+#FL6511361
+```{r combined-23-FL}
+combined_data_23 <- combined_data %>%
+  filter(PWSID=="FL6511361")
+```
+Unknown- Not Census Area Boundary
+
+#FL2100741
+```{r combined-24-FL}
+combined_data_24 <- combined_data %>%
+  filter(PWSID=="FL2100741")
+```
+Unknown- Not Census Area Boundary
+
+##VIRGINIA##
+
+```{r census_VA}
+census_VA <- places(state= "VA", cb = TRUE, year=2021) 
+```
+
+```{r fixed VA}
+system_VA<-fixed_utilities %>%
+  filter(str_detect(PWSID,"VA")) %>%
+  filter(PWSID %in% c("VA3550051", "VA3700500", "VA3710100", "VA3740600", "VA3810900", "VA4087125", "VA4760100", "VA4041845", "VA6179100", "VA2770900"))
+```
+
+```{r add-area-col-VA}
+system_VA<-system_VA %>%
+  mutate(System_Area=st_area(system_VA))
+
+census_VA<-census_VA %>%
+  mutate(Census_Area=st_area(census_VA))
+
+intersection_VA <- st_intersection(census_VA, system_VA) 
+```
+
+```{r intersection-area-col-va}
+intersection_VA<-intersection_VA %>%
+  mutate(Intersection_Area=st_area(intersection_VA))
+```
+
+
+```{r add-pct-cols-VA}
+intersection_VA <- intersection_VA %>%
+  mutate(pct_system=Intersection_Area/System_Area) %>%
+mutate(pct_census=Intersection_Area/Census_Area) %>%
+mutate("Census Area Boundary"=if_else("pct_census" > 0.980 & "pct_system" > 0.980, "True", "False"))
+```
+
+#VA3740600
+```{r int-VA-1}
+intersection_VA_1<-intersection_VA %>%
+  filter(PWSID=="VA3740600")
+```
+
+Unknown- Not Census Area Boundary
+
+#VA4760100
+```{r int-VA-2}
+intersection_VA_2<-intersection_VA %>%
+  filter(PWSID=="VA4760100")
+```
+
+Census Area Boundary
+
+#VA3550051
+```{r int-VA-3}
+intersection_VA_3<-intersection_VA %>%
+  filter(PWSID=="VA3550051")
+```
+
+Census Area Boundary
+
+#VA3810900
+```{r int-VA-4}
+intersection_VA_4<-intersection_VA %>%
+  filter(PWSID=="VA3810900")
+```
+
+Unknown- Not Census Boundary
+
+#VA3700500
+```{r int-VA-5}
+intersection_VA_5<-intersection_VA %>%
+  filter(PWSID=="VA3700500")
+```
+
+Unknown- Not Census Boundary
+
+#VA3710100
+```{r int-VA-6}
+intersection_VA_6<-intersection_VA %>%
+  filter(PWSID=="VA3710100")
+```
+
+Unknown- Not Census Boundary
+
+#VA6179100
+```{r int-VA-7}
+intersection_VA_7<-intersection_VA %>%
+  filter(PWSID=="VA6179100")
+```
+
+Unknown- Not Census Boundary
+
+#VA4041845
+```{r int-VA-8}
+intersection_VA_8<-intersection_VA %>%
+  filter(PWSID=="VA4041845")
+```
+
+Unknown- Not Census Boundary
+
+#VA4087125
+```{r int-VA-9}
+intersection_VA_9<-intersection_VA %>%
+  filter(PWSID=="VA4087125")
+```
+
+Unknown- Not Census Boundary
+
+#VA2770900
+```{r int-VA-10}
+intersection_VA_10<-intersection_VA %>%
+  filter(PWSID=="VA2770900")
+```
+
+Unknown- Not Census Boundary
+
+
+##GEORGIA##
+```{r census_GA}
+census_GA <- places(state= "GA", cb = TRUE, year=2021) 
+```
+
+```{r fixed-GA}
+system_GA<-fixed_utilities %>%
+  filter(str_detect(PWSID,"GA")) %>%
+  filter(PWSID %in% c("GA0570002", "GA0630000", "GA0670003", "GA0890001", "GA1510001", "GA0210001", "GA0510003", "GA0590000", "GA0730000", "GA1170050", "GA1210001", "GA1210005", "GA1350004", "GA1390001", "GA2230002", "GA2450000" ))
+```
+
+
+```{r add-area-col-GA}
+system_GA<-system_GA %>%
+  mutate(System_Area=st_area(system_GA))
+
+census_GA<-census_GA %>%
+  mutate(Census_Area=st_area(census_GA))
+
+intersection_GA <- st_intersection(census_GA, system_GA) 
+```
+
+```{r intersection-area-col-GA}
+sf::sf_use_s2(FALSE)
+intersection_GA<-intersection_GA %>%
+  mutate(Intersection_Area=st_area(intersection_GA))
+```
+
+
+```{r add-pct-cols-GA}
+intersection_GA <- intersection_GA %>%
+  mutate(pct_system=Intersection_Area/System_Area) %>%
+mutate(pct_census=Intersection_Area/Census_Area) %>%
+mutate("Census Area Boundary"=if_else("pct_census" > 0.980 & "pct_system" > 0.980, "True", "False"))
+```
+
+#GA0590000
+```{r int-GA-1}
+intersection_GA_1<-intersection_GA %>%
+  filter(PWSID=="GA0590000")
+```
+
+Census Area Boundary
+
+#GA1390001
+```{r int-GA-2}
+intersection_GA_2<-intersection_GA %>%
+  filter(PWSID=="GA1390001")
+```
+
+Unknown- Not Census Area Boundary
+
+#GA1210001
+```{r int-GA-3}
+intersection_GA_3<-intersection_GA %>%
+  filter(PWSID=="GA1210001")
+```
+
+Census Area Boundary
+
+#GA0510003
+```{r int-GA-4}
+intersection_GA_4<-intersection_GA %>%
+  filter(PWSID=="GA0510003")
+```
+Unknown-Not Census Area Boundary
+
+#GA2450000
+```{r int-GA-5}
+intersection_GA_5<-intersection_GA %>%
+  filter(PWSID=="GA2450000")
+```
+Census Area Boundary
+
+#GA0730000
+```{r int-GA-6}
+intersection_GA_6<-intersection_GA %>%
+  filter(PWSID=="GA0730000")
+```
+Unknown-Not Census Area Boundary
+
+#GA1350004
+```{r int-GA-7}
+intersection_GA_7<-intersection_GA %>%
+  filter(PWSID=="GA1350004")
+```
+
+Unknown-Not Census Area Boundary
+
+#GA1170050
+```{r int-GA-8}
+intersection_GA_8<-intersection_GA %>%
+  filter(PWSID=="GA1170050")
+```
+Unknown-Not Census Area Boundary
+
+#GA0570002
+```{r int-GA-9}
+intersection_GA_9<-intersection_GA %>%
+  filter(PWSID=="GA0570002")
+```
+Unknown-Not Census Area Boundary
+
+#GA0890001
+```{r int-GA-10}
+intersection_GA_10<-intersection_GA %>%
+  filter(PWSID=="GA0890001")
+```
+Unknown-Not Census Area Boundary
+
+#GA2230002
+```{r int-GA-11}
+intersection_GA_11<-intersection_GA %>%
+  filter(PWSID=="GA2230002")
+```
+Unknown-Not Census Area Boundary
+
+#GA0670003
+```{r int-GA-12}
+intersection_GA_12<-intersection_GA %>%
+  filter(PWSID=="GA0670003")
+```
+Unknown-Not Census Area Boundary
+
+#GA1210005
+```{r int-GA-13}
+intersection_GA_13<-intersection_GA %>%
+  filter(PWSID=="GA1210005")
+```
+Unknown-Not Census Area Boundary
+
+#GA0630000
+```{r int-GA-14}
+intersection_GA_14<-intersection_GA %>%
+  filter(PWSID=="GA0630000")
+```
+Unknown-Not Census Area Boundary
+
+#GA1510001
+```{rint-GA-15}
+intersection_GA_15<-intersection_GA %>%
+  filter(PWSID=="GA1510001")
+```
+Unknown-Not Census Area Boundary
+
+#GA0210001
+```{r int-GA-16}
+intersection_GA_16<-intersection_GA %>%
+  filter(PWSID=="GA0210001")
+```
+Unknown-Not Census Area Boundary
+
+##NEW YORK##
+
+```{r census_NY}
+census_NY <- places(state= "NY", cb = TRUE, year=2021) 
+```
+
+```{r fixed NY}
+system_NY<-fixed_utilities %>%
+  filter(str_detect(PWSID,"NY")) %>%
+  filter(PWSID %in% c("NY1400443", "NY2701047", "NY3202411", "NY2704518", "NY2900000", "NY3304334", "NY5110526", "NY5903465", "NY7003493"))
+```
+
+```{r add-area-col-NY}
+system_NY<-system_NY %>%
+  mutate(System_Area=st_area(system_NY))
+
+census_NY<-census_NY %>%
+  mutate(Census_Area=st_area(census_NY))
+
+intersection_NY <- st_intersection(census_NY, system_NY) 
+```
+
+```{r intersection-area-col-NY}
+intersection_NY<-intersection_NY %>%
+  mutate(Intersection_Area=st_area(intersection_NY))
+```
+
+```{r add-pct-cols-NY}
+intersection_NY <- intersection_NY %>%
+  mutate(pct_system=Intersection_Area/System_Area) %>%
+mutate(pct_census=Intersection_Area/Census_Area) %>%
+mutate("Census Area Boundary"=if_else("pct_census" > 0.980 & "pct_system" > 0.980, "True", "False"))
+```
+
+#NY7003493
+```{r int-NY-1}
+intersection_NY_1<-intersection_NY %>%
+  filter(PWSID=="NY7003493")
+```
+
+Unknown- Not Census Area Boundary
+
+#NY2704518
+```{r int-NY-2}
+intersection_NY_2<-intersection_NY %>%
+  filter(PWSID=="NY2704518")
+```
+
+Census Area Boundary
+
+#NY5903465
+```{r int-NY-3}
+intersection_NY_3<-intersection_NY %>%
+  filter(PWSID=="NY5903465")
+```
+Census Area Boundary
+
+#NY3304334
+```{r int-NY-4}
+intersection_NY_4<-intersection_NY %>%
+  filter(PWSID=="NY3304334")
+```
+Census Area Boundary
+
+#NY2900000
+```{r int-NY-5}
+intersection_NY_5<-intersection_NY %>%
+  filter(PWSID=="NY2900000")
+```
+Unknown- Not Census Area Boundary
+
+#NY3202411
+```{r int-NY-6}
+intersection_NY_6<-intersection_NY %>%
+  filter(PWSID=="NY3202411")
+```
+Unknown- Not Census Area Boundary
+
+#NY5110526
+```{r int-NY-7}
+intersection_NY_7<-intersection_NY %>%
+  filter(PWSID=="NY5110526")
+```
+Unknown- Not Census Area Boundary
+
+##COLORADO##
+
+```{r census_CO}
+census_CO <- places(state= "CO", cb = TRUE, year=2021) 
+```
+
+```{r fixed-CO}
+system_CO<-fixed_utilities %>%
+  filter(str_detect(PWSID,"CO")) %>%
+  filter(PWSID %in% c("CO0103005", "CO0107152", "CO0107155", "CO0116001", "CO0121150", "CO0130001", "CO0135291", "CO0151500", "CO0162321"))
+```
+
+```{r add-area-col-CO}
+system_CO<-system_CO %>%
+  mutate(System_Area=st_area(system_CO))
+
+census_CO<-census_CO %>%
+  mutate(Census_Area=st_area(census_CO))
+
+intersection_CO <- st_intersection(census_CO, system_CO) 
+```
+
+```{r intersection-area-col-CO}
+intersection_CO<-intersection_CO %>%
+  mutate(Intersection_Area=st_area(intersection_CO))
+```
+
+```{r add-pct-cols-CO}
+intersection_CO <- intersection_CO %>%
+  mutate(pct_system=Intersection_Area/System_Area) %>%
+mutate(pct_census=Intersection_Area/Census_Area) %>%
+mutate("Census Area Boundary"=if_else("pct_census" > 0.980 & "pct_system" > 0.980, "True", "False"))
+```
+
+#CO0135291
+```{r int-CO-1}
+intersection_CO_1<-intersection_CO %>%
+  filter(PWSID=="CO0135291")
+```
+Census Area Boundary
+
+#CO0121150
+```{r int-CO-2}
+intersection_CO_2<-intersection_CO %>%
+  filter(PWSID=="CO0121150")
+```
+Census Area Boundary
+
+#CO0107152
+```{r int-CO-3}
+intersection_CO_3<-intersection_CO %>%
+  filter(PWSID=="CO0107152")
+```
+Census Area Boundary
+
+#CO0162321
+```{r int-CO-4}
+intersection_CO_4<-intersection_CO %>%
+  filter(PWSID=="CO0162321")
+```
+Census Area Boundary
+
+#CO0107155
+```{r int-CO-5}
+intersection_CO_5<-intersection_CO %>%
+  filter(PWSID=="CO0107155")
+```
+Census Area Boundary
+
+#CO0130001
+```{r int-CO-6}
+intersection_CO_6<-intersection_CO %>%
+  filter(PWSID=="CO0130001")
+```
+Census Area Boundary
+
+#CO0103005
+```{r int-CO-7}
+intersection_CO_7<-intersection_CO %>%
+  filter(PWSID=="CO0103005")
+```
+Unknown-Not Census Area Boundary
+
+#CO0116001
+```{r int-CO-8}
+intersection_CO_8<-intersection_CO %>%
+  filter(PWSID=="CO0116001")
+```
+Census Area Boundary
+
+#CO0151500
+```{r int-CO-9}
+intersection_CO_9<-intersection_CO %>%
+  filter(PWSID=="CO0151500")
+```
+Unknown-Not Census Area Boundary
+
+##TENNESSEE##
+
+```{r census_TN}
+census_TN <- places(state= "TN", cb = TRUE, year=2021) 
+```
+
+```{r fixed-TN}
+system_TN<-fixed_utilities %>%
+  filter(str_detect(PWSID,"TN")) %>%
+  filter(PWSID %in% c("TN0000116", "TN0000349", "TN0000366", "TN0000491", "TN0000494", "TN0000791"))
+```
+
+
+```{r add-area-col-TN}
+system_TN<-system_TN %>%
+  mutate(System_Area=st_area(system_TN))
+
+census_TN<-census_TN %>%
+  mutate(Census_Area=st_area(census_TN))
+
+intersection_TN <- st_intersection(census_TN, system_TN) 
+```
+
+```{r intersection-area-col-TN}
+intersection_TN <-intersection_TN %>%
+  mutate(Intersection_Area=st_area(intersection_TN))
+```
+
+
+```{r add-pct-cols-TN}
+intersection_TN <- intersection_TN %>%
+  mutate(pct_system=Intersection_Area/System_Area) %>%
+mutate(pct_census=Intersection_Area/Census_Area) %>%
+mutate("Census Area Boundary"=if_else("pct_census" > 0.980 & "pct_system" > 0.980, "True", "False"))
+```
+
+#TN0000491
+```{r int-TN-1}
+intersection_TN_1<-intersection_TN %>%
+  filter(PWSID=="TN0000491")
+```
+Unknown-Not Census Area Boundary
+
+#TN0000116
+```{r int-TN-2}
+intersection_TN_2<-intersection_TN %>%
+  filter(PWSID=="TN0000116")
+```
+Census Area Boundary
+
+#TN0000349
+```{r int-TN-3}
+intersection_TN_3<-intersection_TN %>%
+  filter(PWSID=="TN0000349")
+```
+Census Area Boundary
+
+#TN0000494
+```{r int-TN-4}
+intersection_TN_4<-intersection_TN %>%
+  filter(PWSID=="TN0000494")
+```
+Census Area Boundary
+
+#TN0000366
+```{r int-TN-5}
+intersection_TN_5<-intersection_TN %>%
+  filter(PWSID=="TN0000366")
+```
+Census Area Boundary
+
+#TN0000791
+```{r int-TN-6}
+intersection_TN_6<-intersection_TN %>%
+  filter(PWSID=="TN0000791")
+```
+Unknown- Not Census Area Boundary
+
+##OHIO##
+
+```{r census_OH}
+census_OH <- places(state= "OH", cb = TRUE, year=2021) 
+```
+
+```{r fixed-OH}
+system_OH<-fixed_utilities %>%
+  filter(str_detect(PWSID,"OH")) %>%
+  filter(PWSID %in% c("OH0900303", "OH2101412", "OH2504412", "OH3102612", "OH5703512", "OH7608112", "OH7700011", "OH5701315" ))
+```
+
+
+```{r add-area-col-OH}
+system_OH<-system_OH %>%
+  mutate(System_Area=st_area(system_OH))
+
+census_OH<-census_OH %>%
+  mutate(Census_Area=st_area(census_OH))
+
+intersection_OH <- st_intersection(census_OH, system_OH) 
+```
+
+```{r intersection-area-col-OH}
+intersection_OH <-intersection_OH %>%
+  mutate(Intersection_Area=st_area(intersection_OH))
+```
+
+```{r add-pct-cols-OH}
+intersection_OH <- intersection_OH %>%
+  mutate(pct_system=Intersection_Area/System_Area) %>%
+mutate(pct_census=Intersection_Area/Census_Area) %>%
+mutate("Census Area Boundary"=if_else("pct_census" > 0.980 & "pct_system" > 0.980, "True", "False"))
+```
+
+#OH2504412
+```{r int-OH-1}
+intersection_OH_1<-intersection_OH %>%
+  filter(PWSID=="OH2504412")
+```
+Census Area Boundary
+
+#OH5703512
+```{r int-OH-2}
+intersection_OH_2<-intersection_OH %>%
+  filter(PWSID=="OH5703512")
+```
+Census Area Boundary
+
+#OH7608112
+```{r int-OH-3}
+intersection_OH_3<-intersection_OH %>%
+  filter(PWSID=="OH7608112")
+```
+Census Area Boundary
+
+#OH7700011
+```{r int-OH-4}
+intersection_OH_4<-intersection_OH %>%
+  filter(PWSID=="OH7700011")
+```
+Census Area Boundary
+
+#OH3102612
+```{r int-OH-5}
+intersection_OH_5<-intersection_OH %>%
+  filter(PWSID=="OH3102612")
+```
+Census Area Boundary
+
+#OH0900303
+```{r int-OH-6}
+intersection_OH_6<-intersection_OH %>%
+  filter(PWSID=="OH0900303")
+```
+Unknown-Not Census Area Boundary
+
+#OH5701315
+```{r int-OH-7}
+intersection_OH_7<-intersection_OH %>%
+  filter(PWSID=="OH5701315")
+```
+Unknown-Not Census Area Boundary
+
+#OH2101412
+```{r int-OH-8}
+intersection_OH_8<-intersection_OH %>%
+  filter(PWSID=="OH2101412")
+```
+Unknown-Not Census Area Boundary
+
+##ALABAMA##
+
+```{r census_AL}
+census_AL <- places(state= "AL", cb = TRUE, year=2021) 
+```
+
+```{r fixed-AL}
+system_AL<-fixed_utilities %>%
+  filter(str_detect(PWSID,"AL")) %>%
+  filter(PWSID %in% c("AL0000882", "AL0001005", "AL0001070"))
+```
+
+
+```{r add-area-col-AL}
+system_AL<-system_AL %>%
+  mutate(System_Area=st_area(system_AL))
+
+census_AL<-census_AL %>%
+  mutate(Census_Area=st_area(census_AL))
+
+intersection_AL <- st_intersection(census_AL, system_AL)
+```
+
+```{r intersection-area-col-AL}
+sf::sf_use_s2(FALSE)
+intersection_AL <-intersection_AL %>%
+  mutate(Intersection_Area=st_area(intersection_AL))
+```
+
+```{r add-pct-cols-AL}
+intersection_AL <- intersection_AL %>%
+  mutate(pct_system=Intersection_Area/System_Area) %>%
+mutate(pct_census=Intersection_Area/Census_Area) %>%
+mutate("Census Area Boundary"=if_else("pct_census" > 0.980 & "pct_system" > 0.980, "True", "False"))
+```
+
+#AL0001070
+```{r int-AL-1}
+intersection_AL_1<-intersection_AL %>%
+  filter(PWSID=="AL0001070")
+```
+Census Area Boundary
+
+#AL0001005
+```{r int-AL-2}
+intersection_AL_2<-intersection_AL %>%
+  filter(PWSID=="AL0001005")
+```
+Unknown-Not Census Area Boundary
+
+#AL0000882
+```{r int-AL-3}
+intersection_AL_3<-intersection_AL %>%
+  filter(PWSID=="AL0000882")
+```
+Unknown-Not Census Area Boundary
+
+##ILLINOIS##
+
+```{r census_IL}
+census_IL <- places(state= "IL", cb = TRUE, year=2021) 
+```
+
+```{r fixed-IL}
+system_IL<-fixed_utilities %>%
+  filter(str_detect(PWSID,"IL")) %>%
+  filter(PWSID %in% c("IL0195300", "IL0316000", "IL0434670", "IL0894070", "IL0894380", "IL1635040", "IL1671200", "IL1970450", "IL2010300"))
+```
+
+```{r add-area-col-IL}
+system_IL<-system_IL %>%
+  mutate(System_Area=st_area(system_IL))
+
+census_IL<-census_IL %>%
+  mutate(Census_Area=st_area(census_IL))
+
+intersection_IL <- st_intersection(census_IL, system_IL)
+```
+
+```{r intersection-area-col-IL}
+intersection_IL <-intersection_IL %>%
+  mutate(Intersection_Area=st_area(intersection_IL))
+```
+
+```{r add-pct-cols-IL}
+intersection_IL <- intersection_IL %>%
+  mutate(pct_system=Intersection_Area/System_Area) %>%
+mutate(pct_census=Intersection_Area/Census_Area) %>%
+mutate("Census Area Boundary"=if_else("pct_census" > 0.980 & "pct_system" > 0.980, "True", "False"))
+```
+
+#IL0434670
+```{r int-IL-1}
+intersection_IL_1<-intersection_IL %>%
+  filter(PWSID=="IL0434670")
+```
+Census Area Boundary
+
+#IL0894380
+```{r int-IL-2}
+intersection_IL_2<-intersection_IL %>%
+  filter(PWSID=="IL0894380")
+```
+Unknown-Not Census Area Boundary
+
+#IL0316000
+```{r int-IL-3}
+intersection_IL_3<-intersection_IL %>%
+  filter(PWSID=="IL0316000")
+```
+Census Area Boundary
+
+#IL0894070
+```{r int-IL-4}
+intersection_IL_4<-intersection_IL %>%
+  filter(PWSID=="IL0894070")
+```
+Census Area Boundary
+
+#IL1970450
+```{r int-IL-5}
+intersection_IL_5<-intersection_IL %>%
+  filter(PWSID=="IL1970450")
+```
+Unknown-Not Census Area Boundary
+
+#IL2010300
+```{r int-IL-6}
+intersection_IL_6<-intersection_IL %>%
+  filter(PWSID=="IL2010300")
+```
+Census Area Boundary
+
+#IL1671200
+```{r int-IL-7}
+intersection_IL_7<-intersection_IL %>%
+  filter(PWSID=="IL1671200")
+```
+Unknown-Not Census Area Boundary
+
+#IL0195300
+```{r int-IL-8}
+intersection_IL_8<-intersection_IL %>%
+  filter(PWSID=="IL0195300")
+```
+Census Area Boundary
+
+#IL1635040
+```{r int-IL-9}
+intersection_IL_9<-intersection_IL %>%
+  filter(PWSID=="IL1635040")
+```
+Census Area Boundary
+
+##LOUISIANA##
+
+```{r census_LA}
+census_LA <- places(state= "LA", cb = TRUE, year=2021) 
+```
+
+```{r fixed-LA}
+system_LA<-fixed_utilities %>%
+  filter(str_detect(PWSID,"LA")) %>%
+  filter(PWSID %in% c("LA1051004", "LA1017031", "LA1055017", "LA1071009", "LA1109002"))
+```
+
+```{r add-area-col-LA}
+system_LA<-system_LA %>%
+  mutate(System_Area=st_area(system_LA))
+
+census_LA<-census_LA %>%
+  mutate(Census_Area=st_area(census_LA))
+
+intersection_LA <- st_intersection(census_LA, system_LA)
+```
+
+```{r intersection-area-col-LA}
+intersection_LA <-intersection_LA %>%
+  mutate(Intersection_Area=st_area(intersection_LA))
+```
+
+```{r add-pct-cols-LA}
+intersection_LA <- intersection_LA %>%
+  mutate(pct_system=Intersection_Area/System_Area) %>%
+mutate(pct_census=Intersection_Area/Census_Area) %>%
+mutate("Census Area Boundary"=if_else("pct_census" > 0.980 & "pct_system" > 0.980, "True", "False"))
+```
+
+#LA1017031
+```{r int-LA-1}
+intersection_LA_1<-intersection_LA %>%
+  filter(PWSID=="LA1017031")
+```
+Census Area Boundary
+
+#LA1055017
+```{r int-LA-2}
+intersection_LA_2<-intersection_LA %>%
+  filter(PWSID=="LA1055017")
+```
+Census Area Boundary
+
+#LA1071009
+```{r int-LA-3}
+intersection_LA_3<-intersection_LA %>%
+  filter(PWSID=="LA1071009")
+```
+Census Area Boundary
+
+#LA1109002
+```{r int-LA-4}
+intersection_LA_4<-intersection_LA %>%
+  filter(PWSID=="LA1109002")
+```
+Unknown-Not Census Area Boundary
+
+##SOUTH CAROLINA##
+
+```{r census_SC}
+census_SC <- places(state= "SC", cb = TRUE, year=2021) 
+```
+
+```{r fixed-SC}
+system_SC<-fixed_utilities %>%
+  filter(str_detect(PWSID,"SC")) %>%
+  filter(PWSID %in% c("SC2310001", "SC2620004", "SC4010001", "SC4210001", "SC0720003"))
+```
+
+```{r add-area-col-SC}
+system_SC<-system_SC %>%
+  mutate(System_Area=st_area(system_SC))
+
+census_SC<-census_SC %>%
+  mutate(Census_Area=st_area(census_SC))
+
+intersection_SC <- st_intersection(census_SC, system_SC)
+```
+
+```{r intersection-area-col-SC}
+intersection_SC <-intersection_SC %>%
+  mutate(Intersection_Area=st_area(intersection_SC))
+```
+
+```{r add-pct-cols-SC}
+intersection_SC <- intersection_SC %>%
+  mutate(pct_system=Intersection_Area/System_Area) %>%
+mutate(pct_census=Intersection_Area/Census_Area) %>%
+mutate("Census Area Boundary"=if_else("pct_census" > 0.980 & "pct_system" > 0.980, "True", "False"))
+```
+
+#SC4210001
+```{r int-SC-1}
+intersection_SC_1<-intersection_SC %>%
+  filter(PWSID=="SC4210001")
+```
+Unknown-Not Census Area Boundary
+
+#SC4010001
+```{r int-SC-2}
+intersection_SC_2<-intersection_SC %>%
+  filter(PWSID=="SC4010001")
+```
+Census Area Boundary
+
+#SC2310001
+```{r int-SC-3}
+intersection_SC_3<-intersection_SC %>%
+  filter(PWSID=="SC2310001")
+```
+Census Area Boundary
+
+#SC2620004
+```{r int-SC-4}
+intersection_SC_4<-intersection_SC %>%
+  filter(PWSID=="SC2620004")
+```
+Unknown-Not Census Area Boundary
+
+##WISCONSIN##
+
+```{r census_WI}
+census_WI <- places(state= "WI", cb = TRUE, year=2021) 
+```
+
+```{r fixed-WI}
+system_WI<-fixed_utilities %>%
+  filter(str_detect(PWSID,"WI")) %>%
+  filter(PWSID %in% c("WI1130224", "WI2410100", "WI2520062", "WI4050356"))
+```
+
+```{r add-area-col-WI}
+system_WI<-system_WI %>%
+  mutate(System_Area=st_area(system_WI))
+
+census_WI<-census_WI %>%
+  mutate(Census_Area=st_area(census_WI))
+
+intersection_WI <- st_intersection(census_WI, system_WI)
+```
+
+```{r intersection-area-col-WI}
+intersection_WI <-intersection_WI %>%
+  mutate(Intersection_Area=st_area(intersection_WI))
+```
+
+```{r add-pct-cols-WI}
+intersection_WI <- intersection_WI %>%
+  mutate(pct_system=Intersection_Area/System_Area) %>%
+mutate(pct_census=Intersection_Area/Census_Area) %>%
+mutate("Census Area Boundary"=if_else("pct_census" > 0.980 & "pct_system" > 0.980, "True", "False"))
+```
+
+#WI2410100
+```{r int-WI-1}
+intersection_WI_1<-intersection_WI %>%
+  filter(PWSID=="WI2410100")
+```
+Census Area Boundary 
+
+#WI1130224
+```{r int-WI-2}
+intersection_WI_2<-intersection_WI %>%
+  filter(PWSID=="WI1130224")
+```
+Census Area Boundary 
+
+#WI4050356
+```{r int-WI-3}
+intersection_WI_3<-intersection_WI %>%
+  filter(PWSID=="WI4050356")
+```
+Unknown-Not Census Area Boundary
+
+#WI2520062
+```{r int-WI-4}
+intersection_WI_4<-intersection_WI %>%
+  filter(PWSID=="WI2520062")
+```
+Census Area Boundary 
+
+##INDIANA##
+
+```{r census_IN}
+census_IN <- places(state= "IN", cb = TRUE, year=2021) 
+```
+
+```{r fixed-IN}
+system_IN<-fixed_utilities %>%
+  filter(str_detect(PWSID,"IN")) %>%
+  filter(PWSID %in% c("IN5202020", "IN5249004", "IN5271014", "IN5282002"))
+```
+
+
+```{r add-area-col-IN}
+system_IN<-system_IN %>%
+  mutate(System_Area=st_area(system_IN))
+
+census_IN<-census_IN %>%
+  mutate(Census_Area=st_area(census_IN))
+
+intersection_IN <- st_intersection(census_IN, system_IN)
+```
+
+```{r intersection-area-col_IN}
+intersection_IN <-intersection_IN %>%
+  mutate(Intersection_Area=st_area(intersection_IN))
+```
+
+```{r add-pct-cols_IN}
+intersection_IN <- intersection_IN %>%
+  mutate(pct_system=Intersection_Area/System_Area) %>%
+mutate(pct_census=Intersection_Area/Census_Area) %>%
+mutate("Census Area Boundary"=if_else("pct_census" > 0.980 & "pct_system" > 0.980, "True", "False"))
+```
+
+#IN5271014
+```{r int-IN-1}
+intersection_IN_1<-intersection_IN %>%
+  filter(PWSID=="IN5271014")
+```
+Census Area Boundary
+
+#IN5202020
+```{r int-IN-2}
+intersection_IN_2<-intersection_IN %>%
+  filter(PWSID=="IN5202020")
+```
+Census Area Boundary
+
+#IN5282002
+```{r int-IN-3}
+intersection_IN_3<-intersection_IN %>%
+  filter(PWSID=="IN5282002")
+```
+Census Area Boundary
+
+#IN5249004
+```{r int-IN-4}
+intersection_IN_4<-intersection_IN %>%
+  filter(PWSID=="IN5249004")
+```
+Census Area Boundary
+
+##IOWA##
+
+```{r census_IA}
+census_IA <- places(state= "IA", cb = TRUE, year=2021) 
+```
+
+```{r fixed-IA}
+system_IA<-fixed_utilities %>%
+  filter(str_detect(PWSID,"IA")) %>%
+  filter(PWSID %in% c("IA5715093", "IA7727031", "IA8222001"))
+```
+
+```{r add-area-col-IA}
+system_IA<-system_IA %>%
+  mutate(System_Area=st_area(system_IA))
+
+census_IA<-census_IA %>%
+  mutate(Census_Area=st_area(census_IA))
+
+intersection_IA <- st_intersection(census_IA, system_IA)
+```
+
+```{r intersection-area-col-IA}
+intersection_IA <-intersection_IA %>%
+  mutate(Intersection_Area=st_area(intersection_IA))
+```
+
+```{r add-pct-cols-IA}
+intersection_IA <- intersection_IA %>%
+  mutate(pct_system=Intersection_Area/System_Area) %>%
+mutate(pct_census=Intersection_Area/Census_Area) %>%
+mutate("Census Area Boundary"=if_else("pct_census" > 0.980 & "pct_system" > 0.980, "True", "False"))
+```
+
+#IA5715093
+```{r int-IA-1}
+intersection_IA_1<-intersection_IA %>%
+  filter(PWSID=="IA5715093")
+```
+Census Area Boundary
+
+#IA7727031
+```{r int-IA-2}
+intersection_IA_2<-intersection_IA %>%
+  filter(PWSID=="IA7727031")
+```
+Census Area Boundary
+
+#IA8222001
+```{r int-IA-3}
+intersection_IA_3<-intersection_IA %>%
+  filter(PWSID=="IA8222001")
+```
+Census Area Boundary
+
+##IDAHO##
+```{r census_ID}
+census_ID <- places(state= "ID", cb = TRUE, year=2021) 
+```
+
+```{r fixed-ID}
+system_ID<-fixed_utilities %>%
+  filter(str_detect(PWSID,"ID")) %>%
+  filter(PWSID %in% c("ID4010016", "ID3140080", "ID4010097"))
+```
+
+```{r add-area-col-ID}
+system_ID<-system_ID %>%
+  mutate(System_Area=st_area(system_ID))
+
+census_ID<-census_ID %>%
+  mutate(Census_Area=st_area(census_ID))
+
+intersection_ID <- st_intersection(census_ID, system_ID)
+```
+
+```{r intersection-area-col-ID}
+intersection_ID <-intersection_ID %>%
+  mutate(Intersection_Area=st_area(intersection_ID))
+```
+
+```{r add-pct-cols-ID}
+intersection_ID <- intersection_ID %>%
+  mutate(pct_system=Intersection_Area/System_Area) %>%
+mutate(pct_census=Intersection_Area/Census_Area) %>%
+mutate("Census Area Boundary"=if_else("pct_census" > 0.980 & "pct_system" > 0.980, "True", "False"))
+```
+
+#ID4010097
+```{r int-ID-1}
+intersection_ID_1<-intersection_ID %>%
+  filter(PWSID=="ID4010097")
+```
+Unknown-Not Census Area Boundary
+
+#ID3140080
+```{r int-ID-2}
+intersection_ID_2<-intersection_ID %>%
+  filter(PWSID=="ID3140080")
+```
+Unknown-Not Census Area Boundary
+
+#ID4010016
+```{r int-ID-3}
+intersection_ID_3<-intersection_ID %>%
+  filter(PWSID=="ID4010016")
+```
+Unknown-Not Census Area Boundary
+
+##MICHIGAN##
+
+```{r census_MI}
+census_MI <- places(state= "MI", cb = TRUE, year=2021) 
+```
+
+```{r fixed-MI}
+system_MI<-fixed_utilities %>%
+  filter(str_detect(PWSID,"MI")) %>%
+  filter(PWSID %in% c("MI0000220", "MI0001800", "MI0002790"))
+```
+
+```{r add-area-col-MI}
+system_MI<-system_MI %>%
+  mutate(System_Area=st_area(system_MI))
+
+census_MI<-census_MI %>%
+  mutate(Census_Area=st_area(census_MI))
+
+intersection_MI <- st_intersection(census_MI, system_MI)
+```
+
+```{r intersection-area-col-MI}
+intersection_MI <-intersection_MI %>%
+  mutate(Intersection_Area=st_area(intersection_MI))
+```
+
+```{r add-pct-cols-MI}
+intersection_MI<- intersection_MI %>%
+  mutate(pct_system=Intersection_Area/System_Area) %>%
+mutate(pct_census=Intersection_Area/Census_Area) %>%
+mutate("Census Area Boundary"=if_else("pct_census" > 0.980 & "pct_system" > 0.980, "True", "False"))
+```
+
+#MI0002790
+```{r int-MI-1}
+intersection_MI_1<-intersection_MI %>%
+  filter(PWSID=="MI0002790")
+```
+Census Area Boundary
+
+#MI0001800
+```{r int-MI-2}
+intersection_MI_2<-intersection_MI %>%
+  filter(PWSID=="MI0001800")
+```
+Census Area Boundary
+
+#MI0000220
+```{r int-MI-3}
+intersection_MI_3<-intersection_MI %>%
+  filter(PWSID=="MI0000220")
+```
+Census Area Boundary
+
+##OREGON##
+```{r census_OR}
+census_OR <- places(state= "OR", cb = TRUE, year=2021) 
+```
+
+```{r fixed-OR}
+system_OR<-fixed_utilities %>%
+  filter(str_detect(PWSID,"OR")) %>%
+  filter(PWSID %in% c("OR4100657", "OR4100665", "OR4100731"))
+```
+
+
+```{r add-area-col-OR}
+system_OR<-system_OR %>%
+  mutate(System_Area=st_area(system_OR))
+
+census_OR<-census_OR %>%
+  mutate(Census_Area=st_area(census_OR))
+
+intersection_OR <- st_intersection(census_OR, system_OR)
+```
+
+```{r intersection-area-col-OR}
+intersection_OR <-intersection_OR %>%
+  mutate(Intersection_Area=st_area(intersection_OR))
+```
+
+```{r add-pct-cols-OR}
+intersection_OR<- intersection_OR %>%
+  mutate(pct_system=Intersection_Area/System_Area) %>%
+mutate(pct_census=Intersection_Area/Census_Area) %>%
+mutate("Census Area Boundary"=if_else("pct_census" > 0.980 & "pct_system" > 0.980, "True", "False"))
+```
+
+#OR4100657
+```{r int-OR-1}
+intersection_OR_1<-intersection_OR %>%
+  filter(PWSID=="OR4100657")
+```
+Census Area Boundary
+
+#OR4100731
+```{r int-OR-2}
+intersection_OR_2<-intersection_OR %>%
+  filter(PWSID=="OR4100731")
+```
+Census Area Boundary
+
+#OR4100665
+```{r int-OR-3}
+intersection_OR_3<-intersection_OR %>%
+  filter(PWSID=="OR4100665")
+```
+Unknown-Not Census Area Boundary
+
+##MISSOURI##
+```{r census_MO}
+census_MO <- places(state= "MO", cb = TRUE, year=2021) 
+```
+
+```{r fixed-MO}
+system_MO<-fixed_utilities %>%
+  filter(str_detect(PWSID,"MO")) %>%
+  filter(PWSID %in% c("MO1010415", "MO3010181", "MO5010754"))
+```
+
+```{r add-area-col-MO}
+system_MO<-system_MO %>%
+  mutate(System_Area=st_area(system_MO))
+
+census_MO<-census_MO %>%
+  mutate(Census_Area=st_area(census_MO))
+
+intersection_MO <- st_intersection(census_MO, system_MO)
+```
+
+```{r intersection-area-col-MO}
+intersection_MO <-intersection_MO %>%
+  mutate(Intersection_Area=st_area(intersection_MO))
+```
+
+```{r add-pct-cols-MO}
+intersection_MO<- intersection_MO %>%
+  mutate(pct_system=Intersection_Area/System_Area) %>%
+mutate(pct_census=Intersection_Area/Census_Area) %>%
+mutate("Census Area Boundary"=if_else("pct_census" > 0.980 & "pct_system" > 0.980, "True", "False"))
+```
+
+#MO5010754
+```{r int-MO-1}
+intersection_MO_1<-intersection_MO %>%
+  filter(PWSID=="MO5010754")
+```
+Census Area Boundary
+
+#MO1010415
+```{r int-MO-2}
+intersection_MO_2<-intersection_MO %>%
+  filter(PWSID=="MO1010415")
+```
+Census Area Boundary
+
+#MO3010181
+```{r int-MO-3}
+intersection_MO_3<-intersection_MO %>%
+  filter(PWSID=="MO3010181")
+```
+Census Area Boundary
+
+##NEBRASKA##
+
+```{r census_NE}
+census_NE <- places(state= "NE", cb = TRUE, year=2021) 
+```
+
+```{r fixed-NE}
+system_NE<-fixed_utilities %>%
+  filter(str_detect(PWSID,"NE")) %>%
+  filter(PWSID %in% c("NE3105507", "NE3110926"))
+```
+
+```{r add-area-col-NE}
+system_NE<-system_NE %>%
+  mutate(System_Area=st_area(system_NE))
+
+census_NE<-census_NE %>%
+  mutate(Census_Area=st_area(census_NE))
+
+intersection_NE <- st_intersection(census_NE, system_NE)
+```
+
+```{r intersection-area-col-NE}
+intersection_NE <-intersection_NE %>%
+  mutate(Intersection_Area=st_area(intersection_NE))
+```
+
+```{r add-pct-cols-NE}
+intersection_NE<- intersection_NE %>%
+  mutate(pct_system=Intersection_Area/System_Area) %>%
+mutate(pct_census=Intersection_Area/Census_Area) %>%
+mutate("Census Area Boundary"=if_else("pct_census" > 0.980 & "pct_system" > 0.980, "True", "False"))
+```
+
+#NE3110926
+```{r int-NE-1}
+intersection_NE_1<-intersection_NE %>%
+  filter(PWSID=="NE3110926")
+```
+Census Area Boundary
+
+#NE3105507
+```{r int-NE-2}
+intersection_NE_2<-intersection_NE %>%
+  filter(PWSID=="NE3105507")
+```
+Unknown- Not Census Area Boundary
+
+##NEVADA##
+
+```{r census_NV}
+census_NV <- places(state= "NV", cb = TRUE, year=2021) 
+```
+
+```{r fixed-NV}
+system_NV<-fixed_utilities %>%
+  filter(str_detect(PWSID,"NV")) %>%
+  filter(PWSID %in% c("NV0000076", "NV0000190"))
+```
+
+```{r add-area-col-NV}
+system_NV<-system_NV %>%
+  mutate(System_Area=st_area(system_NV))
+
+census_NV<-census_NV %>%
+  mutate(Census_Area=st_area(census_NV))
+
+intersection_NV <- st_intersection(census_NV, system_NV)
+```
+
+```{r intersection-area-col-NV}
+intersection_NV <-intersection_NV %>%
+  mutate(Intersection_Area=st_area(intersection_NV))
+```
+
+```{r add-pct-cols-NV}
+intersection_NV<- intersection_NV %>%
+  mutate(pct_system=Intersection_Area/System_Area) %>%
+mutate(pct_census=Intersection_Area/Census_Area) %>%
+mutate("Census Area Boundary"=if_else("pct_census" > 0.980 & "pct_system" > 0.980, "True", "False"))
+```
+
+#NV0000076
+```{r int-NV-1}
+intersection_NV_1<-intersection_NV %>%
+  filter(PWSID=="NV0000076")
+```
+Census Area Boundary
+
+#NV0000190
+```{r int-NV-2}
+intersection_NV_2<-intersection_NV %>%
+  filter(PWSID=="NV0000190")
+```
+Unknown-Not Census Area Boundary
+
+##MASSACHUSETTS##
+
+```{r census_MA}
+census_MA <- places(state= "MA", cb = TRUE, year=2021) 
+```
+
+```{r fixed-MA}
+system_MA<-fixed_utilities %>%
+  filter(str_detect(PWSID,"MA")) %>%
+  filter(PWSID %in% c("MA1281000", "MA3035000"))
+```
+
+```{r add-area-col-MA}
+system_MA<-system_MA %>%
+  mutate(System_Area=st_area(system_MA))
+
+census_MA<-census_MA %>%
+  mutate(Census_Area=st_area(census_MA))
+
+intersection_MA <- st_intersection(census_MA, system_MA)
+```
+
+```{r intersection-area-col-MA}
+intersection_MA <-intersection_MA %>%
+  mutate(Intersection_Area=st_area(intersection_MA))
+```
+
+```{r add-pct-cols-MA}
+intersection_MA<- intersection_MA %>%
+  mutate(pct_system=Intersection_Area/System_Area) %>%
+mutate(pct_census=Intersection_Area/Census_Area) %>%
+mutate("Census Area Boundary"=if_else("pct_census" > 0.980 & "pct_system" > 0.980, "True", "False"))
+```
+
+#MA3035000
+```{r int-MA-1}
+intersection_MA_1<-intersection_MA %>%
+  filter(PWSID=="MA3035000")
+```
+Unknown-Not Census Area Boundary
+
+#MA1281000
+```{r int-MA-2}
+intersection_MA_2<-intersection_MA %>%
+  filter(PWSID=="MA1281000")
+```
+Census Area Boundary
+
+##KENTUCKY##
+```{r census_KY}
+census_KY <- places(state= "KY", cb = TRUE, year=2021) 
+```
+
+```{r fixed-KY}
+system_KY<-fixed_utilities %>%
+  filter(str_detect(PWSID,"KY")) %>%
+  filter(PWSID %in% c("KY0590220", "KY0340250"))
+```
+
+```{r add-area-col-KY}
+system_KY<-system_KY %>%
+  mutate(System_Area=st_area(system_KY))
+
+census_KY<-census_KY %>%
+  mutate(Census_Area=st_area(census_KY))
+
+intersection_KY <- st_intersection(census_KY, system_KY)
+```
+
+```{r intersection-area-col-KY}
+intersection_KY <-intersection_KY %>%
+  mutate(Intersection_Area=st_area(intersection_KY))
+```
+
+```{r add-pct-cols-KY}
+intersection_KY<- intersection_KY %>%
+  mutate(pct_system=Intersection_Area/System_Area) %>%
+mutate(pct_census=Intersection_Area/Census_Area) %>%
+mutate("Census Area Boundary"=if_else("pct_census" > 0.980 & "pct_system" > 0.980, "True", "False"))
+```
+
+#KY0340250
+```{r int-KY-1}
+intersection_KY_1<-intersection_KY %>%
+  filter(PWSID=="KY0340250")
+```
+Unknown-Not Census Area Boundary
+
+#KY0590220
+```{r int-KY-2}
+intersection_KY_2<-intersection_KY %>%
+  filter(PWSID=="KY0590220")
+```
+Unknown-Not Census Area Boundary
+
+##DISTRICT OF COLUMBIA##
+
+```{r census_DC}
+census_DC <- places(state= "DC", cb = TRUE, year=2021) 
+```
+
+```{r fixed-DC}
+system_DC<-fixed_utilities %>%
+  filter(str_detect(PWSID,"DC")) %>%
+  filter(PWSID %in% c("DC0000002"))
+```
+
+```{r add-area-col-DC}
+system_DC<-system_DC %>%
+  mutate(System_Area=st_area(system_DC))
+
+census_DC<-census_DC %>%
+  mutate(Census_Area=st_area(census_DC))
+
+intersection_DC <- st_intersection(census_DC, system_DC)
+```
+
+```{r intersection-area-col-DC}
+intersection_DC <-intersection_DC %>%
+  mutate(Intersection_Area=st_area(intersection_DC))
+```
+
+```{r add-pct-cols-DC}
+intersection_DC<- intersection_DC %>%
+  mutate(pct_system=Intersection_Area/System_Area) %>%
+mutate(pct_census=Intersection_Area/Census_Area) %>%
+mutate("Census Area Boundary"=if_else("pct_census" > 0.980 & "pct_system" > 0.980, "True", "False"))
+```
+
+#DC0000002
+```{r}
+intersection_DC_1<-intersection_DC %>%
+  filter(PWSID=="DC0000002")
+```
+Census Area Boundary
+
+##MISSISSIPPI##
+```{r census_MS}
+census_MS <- places(state= "MS", cb = TRUE, year=2021) 
+```
+
+```{r fixed-MS}
+system_MS<-fixed_utilities %>%
+  filter(str_detect(PWSID,"MS")) %>%
+  filter(PWSID %in% c("MS0250008"))
+```
+
+```{r add-area-col-MS}
+system_MS<-system_MS %>%
+  mutate(System_Area=st_area(system_MS))
+
+census_MS<-census_MS %>%
+  mutate(Census_Area=st_area(census_MS))
+
+intersection_MS <- st_intersection(census_MS, system_MS)
+```
+
+```{r intersection-area-col-MS}
+intersection_MS <-intersection_MS %>%
+  mutate(Intersection_Area=st_area(intersection_MS))
+```
+
+```{r add-pct-cols-MS}
+intersection_MS<- intersection_MS %>%
+  mutate(pct_system=Intersection_Area/System_Area) %>%
+mutate(pct_census=Intersection_Area/Census_Area) %>%
+mutate("Census Area Boundary"=if_else("pct_census" > 0.980 & "pct_system" > 0.980, "True", "False"))
+```
+
+#MS0250008
+```{r int-MS-1}
+intersection_MS_1<-intersection_MS %>%
+  filter(PWSID=="MS0250008")
+```
+Census Area Boundary
+
+##MONTANA##
+```{r census_MT}
+census_MT <- places(state= "MT", cb = TRUE, year=2021) 
+```
+
+```{r fixed-MT}
+system_MT<-fixed_utilities %>%
+  filter(str_detect(PWSID,"MT")) %>%
+  filter(PWSID %in% c("MT0000153"))
+```
+
+```{r add-area-col-MT}
+system_MT<-system_MT %>%
+  mutate(System_Area=st_area(system_MT))
+
+census_MT<-census_MT %>%
+  mutate(Census_Area=st_area(census_MT))
+
+intersection_MT <- st_intersection(census_MT, system_MT)
+```
+
+```{r intersection-area-col-MT}
+intersection_MT <-intersection_MT %>%
+  mutate(Intersection_Area=st_area(intersection_MT))
+```
+
+```{r add-pct-cols-MT}
+intersection_MT<- intersection_MT %>%
+  mutate(pct_system=Intersection_Area/System_Area) %>%
+mutate(pct_census=Intersection_Area/Census_Area) %>%
+mutate("Census Area Boundary"=if_else("pct_census" > 0.980 & "pct_system" > 0.980, "True", "False"))
+```
+
+#MT0000153
+```{r int-MT-1}
+intersection_MT_1<-intersection_MT %>%
+  filter(PWSID=="MT0000153")
+```
+Census Area Boundary
+
+##HAWAII##
+```{r census_HI}
+census_HI <- places(state= "HI", cb = TRUE, year=2021) 
+```
+
+```{r fixed-HI}
+system_HI<-fixed_utilities %>%
+  filter(str_detect(PWSID,"HI")) %>%
+  filter(PWSID %in% c("HI0000331"))
+```
+
+```{r add-area-col-HI}
+system_HI<-system_HI %>%
+  mutate(System_Area=st_area(system_HI))
+
+census_HI<-census_HI %>%
+  mutate(Census_Area=st_area(census_HI))
+
+intersection_HI <- st_intersection(census_HI, system_HI)
+```
+
+```{r intersection-area-col-HI}
+intersection_HI <-intersection_HI %>%
+  mutate(Intersection_Area=st_area(intersection_HI))
+```
+
+```{r add-pct-cols-HI}
+intersection_HI<- intersection_HI %>%
+  mutate(pct_system=Intersection_Area/System_Area) %>%
+mutate(pct_census=Intersection_Area/Census_Area) %>%
+mutate("Census Area Boundary"=if_else("pct_census" > 0.980 & "pct_system" > 0.980, "True", "False"))
+```
+
+#HI0000331
+```{r int-HI-1}
+intersection_HI_1<-intersection_HI %>%
+  filter(PWSID=="HI0000331")
+```
+Unknown-Not Census Area Boundary
+
+##MAINE##
+```{r census_ME}
+census_ME <- places(state= "ME", cb = TRUE, year=2021) 
+```
+
+```{r fixed-ME}
+system_ME<-fixed_utilities %>%
+  filter(str_detect(PWSID,"ME")) %>%
+  filter(PWSID %in% c("ME0091300"))
+```
+
+```{r add-area-col-ME}
+system_ME<-system_ME %>%
+  mutate(System_Area=st_area(system_ME))
+
+census_ME<-census_ME %>%
+  mutate(Census_Area=st_area(census_ME))
+
+intersection_ME <- st_intersection(census_ME, system_ME)
+```
+
+```{r intersection-area-col-ME}
+intersection_ME <-intersection_ME %>%
+  mutate(Intersection_Area=st_area(intersection_ME))
+```
+
+```{r add-pct-cols-ME}
+intersection_ME<- intersection_ME %>%
+  mutate(pct_system=Intersection_Area/System_Area) %>%
+mutate(pct_census=Intersection_Area/Census_Area) %>%
+mutate("Census Area Boundary"=if_else("pct_census" > 0.980 & "pct_system" > 0.980, "True", "False"))
+```
+
+#ME0091300
+```{r int-ME-1}
+intersection_ME_1<-intersection_ME %>%
+  filter(PWSID=="ME0091300")
+```
+Unknown-Not Census Area Boundary
+
+##ALASKA##
+```{r census_AK}
+census_AK <- places(state= "AK", cb = TRUE, year=2021) 
+```
+
+```{r fixed-AK}
+system_AK<-fixed_utilities %>%
+  filter(str_detect(PWSID,"AK")) %>%
+  filter(PWSID %in% c("AK2210906"))
+```
+
+```{r add-area-col-AK}
+system_AK<-system_AK %>%
+  mutate(System_Area=st_area(system_AK))
+
+census_AK<-census_AK %>%
+  mutate(Census_Area=st_area(census_AK))
+
+intersection_AK <- st_intersection(census_AK, system_AK)
+```
+
+```{r intersection-area-col-AK}
+sf::sf_use_s2(FALSE)
+intersection_AK <-intersection_AK %>%
+  mutate(Intersection_Area=st_area(intersection_AK))
+```
+
+```{r add-pct-cols-AK}
+intersection_AK<- intersection_AK %>%
+  mutate(pct_system=Intersection_Area/System_Area) %>%
+mutate(pct_census=Intersection_Area/Census_Area) %>%
+mutate("Census Area Boundary"=if_else("pct_census" > 0.980 & "pct_system" > 0.980, "True", "False"))
+```
+
+#AK2210906
+```{r int-AK-1}
+intersection_AK_1<-intersection_AK %>%
+  filter(PWSID=="AK2210906")
+```
+Unknown-Not Census Area Boundary
+
+##ARKANSAS##
+```{r census_AR}
+census_AR <- places(state= "AR", cb = TRUE, year=2021) 
+```
+
+```{r fixed-AR}
+system_AR<-fixed_utilities %>%
+  filter(str_detect(PWSID,"AR")) %>%
+  filter(PWSID %in% c("AR0000465"))
+```
+
+```{r add-area-col-AR}
+system_AR<-system_AR %>%
+  mutate(System_Area=st_area(system_AR))
+
+census_AR<-census_AR %>%
+  mutate(Census_Area=st_area(census_AR))
+
+intersection_AR <- st_intersection(census_AR, system_AR)
+```
+
+```{r intersection-area-col-AR}
+intersection_AR <-intersection_AR %>%
+  mutate(Intersection_Area=st_area(intersection_AR))
+```
+
+```{r add-pct-cols-AR}
+intersection_AR<- intersection_AR %>%
+  mutate(pct_system=Intersection_Area/System_Area) %>%
+mutate(pct_census=Intersection_Area/Census_Area) %>%
+mutate("Census Area Boundary"=if_else("pct_census" > 0.980 & "pct_system" > 0.980, "True", "False"))
+```
+
+#AR0000465
+```{r int-AR-1}
+intersection_AR_1<-intersection_AR %>%
+  filter(PWSID=="AR0000465")
+```
+Unknown-Not Census Area Boundary
+
+##CONNECTICUT##
+```{r census_CT}
+census_CT <- places(state= "CT", cb = TRUE, year=2021) 
+```
+
+```{r fixed-CT}
+system_CT<-fixed_utilities %>%
+  filter(str_detect(PWSID,"CT")) %>%
+  filter(PWSID %in% c("CT1350011"))
+```
+
+```{r add-area-col-CT}
+system_CT<-system_CT %>%
+  mutate(System_Area=st_area(system_CT))
+
+census_CT<-census_CT %>%
+  mutate(Census_Area=st_area(census_CT))
+
+intersection_CT <- st_intersection(census_CT, system_CT)
+```
+
+```{r intersection-area-col-CT}
+intersection_CT <-intersection_CT %>%
+  mutate(Intersection_Area=st_area(intersection_CT))
+```
+
+```{r add-pct-cols-CT}
+intersection_CT<- intersection_CT %>%
+  mutate(pct_system=Intersection_Area/System_Area) %>%
+mutate(pct_census=Intersection_Area/Census_Area) %>%
+mutate("Census Area Boundary"=if_else("pct_census" > 0.980 & "pct_system" > 0.980, "True", "False"))
+```
+
+#CT1350011
+```{r int-CT-1}
+intersection_CT_1<-intersection_CT %>%
+  filter(PWSID=="CT1350011")
+```
+Unknown-Not Census Area Boundary
+
+##MARYLAND##
+```{r census_MD}
+census_MD <- places(state= "MD", cb = TRUE, year=2021) 
+```
+
+```{r fixed-MD}
+system_MD<-fixed_utilities %>%
+  filter(str_detect(PWSID,"MD")) %>%
+  filter(PWSID %in% c("MD0130002"))
+```
+
+```{r add-area-col-MD}
+system_MD<-system_MD %>%
+  mutate(System_Area=st_area(system_MD))
+
+census_MD<-census_MD %>%
+  mutate(Census_Area=st_area(census_MD))
+
+intersection_MD <- st_intersection(census_MD, system_MD)
+```
+
+```{r intersection-area-col-MD}
+intersection_MD <-intersection_MD %>%
+  mutate(Intersection_Area=st_area(intersection_MD))
+```
+
+```{r add-pct-cols-MD}
+intersection_MD<- intersection_MD %>%
+  mutate(pct_system=Intersection_Area/System_Area) %>%
+mutate(pct_census=Intersection_Area/Census_Area) %>%
+mutate("Census Area Boundary"=if_else("pct_census" > 0.980 & "pct_system" > 0.980, "True", "False"))
+```
+
+#MD0130002
+```{r int-MD-1}
+intersection_MD_1<-intersection_MD %>%
+  filter(PWSID=="MD0130002")
+```
+Unknown-Not Census Area Boundary
+
+##NEW HAMPSHIRE##
+```{r census_NH}
+census_NH <- places(state= "NH", cb = TRUE, year=2021) 
+```
+
+```{r fixed-NH}
+system_NH<-fixed_utilities %>%
+  filter(str_detect(PWSID,"NH")) %>%
+  filter(PWSID %in% c("NH1471010"))
+```
+
+```{r add-area-col-NH}
+system_NH<-system_NH %>%
+  mutate(System_Area=st_area(system_NH))
+
+census_NH<-census_NH %>%
+  mutate(Census_Area=st_area(census_NH))
+
+intersection_NH <- st_intersection(census_NH, system_NH)
+```
+
+```{r intersection-area-col-NH}
+intersection_NH <-intersection_NH %>%
+  mutate(Intersection_Area=st_area(intersection_NH))
+```
+
+```{r add-pct-cols-NH}
+intersection_NH<- intersection_NH %>%
+  mutate(pct_system=Intersection_Area/System_Area) %>%
+mutate(pct_census=Intersection_Area/Census_Area) %>%
+mutate("Census Area Boundary"=if_else("pct_census" > 0.980 & "pct_system" > 0.980, "True", "False"))
+```
+
+#NH1471010
+```{r int-NH-1}
+intersection_NH_1<-intersection_NH %>%
+  filter(PWSID=="NH1471010")
+```
+Census Area Boundary
+
+##SOUTH DAKOTA##
+```{r census_SD}
+census_SD <- places(state= "SD", cb = TRUE, year=2021) 
+```
+
+```{r fixed-SD}
+system_SD<-fixed_utilities %>%
+  filter(str_detect(PWSID,"SD")) %>%
+  filter(PWSID %in% c("SD4600294"))
+```
+
+```{r add-area-col-SD}
+system_SD<-system_SD %>%
+  mutate(System_Area=st_area(system_SD))
+
+census_SD<-census_SD %>%
+  mutate(Census_Area=st_area(census_SD))
+
+intersection_SD <- st_intersection(census_SD, system_SD)
+```
+
+```{r intersection-area-col-SD}
+intersection_SD <-intersection_SD %>%
+  mutate(Intersection_Area=st_area(intersection_SD))
+```
+
+```{r add-pct-cols-SD}
+intersection_SD<- intersection_SD %>%
+  mutate(pct_system=Intersection_Area/System_Area) %>%
+mutate(pct_census=Intersection_Area/Census_Area) %>%
+mutate("Census Area Boundary"=if_else("pct_census" > 0.980 & "pct_system" > 0.980, "True", "False"))
+```
+
+#SD4600294
+```{r int-SD-1}
+intersection_SD_1<-intersection_SD %>%
+  filter(PWSID=="SD4600294")
+```
+Census Area Boundary
