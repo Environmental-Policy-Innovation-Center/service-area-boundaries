@@ -1,0 +1,1 @@
+This code compares the boundaries of census designated places to service area boundaries to determine if they are the same. If they are the same, then we have made an effort to find and manually digitize a service area boundary for that water system.
