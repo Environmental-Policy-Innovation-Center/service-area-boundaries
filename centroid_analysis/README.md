@@ -1,0 +1,1 @@
+This project compares the use of ECHO/FRS centroids with geocoded SDWIS addresses to create the most accurate service area boundary approximations. In the SimpleLab data pipeline, they will also be combined with UCMR zip codes served and mobile home park locations to improve service area boundary approximations.
