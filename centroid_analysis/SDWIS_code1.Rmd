@@ -1,0 +1,102 @@
+---
+title: "SDWIS_code1"
+output: html_notebook
+---
+
+```{r}
+#Set working directory
+setwd("/Users/lesliebernal/R_data")
+
+#Import Water System Detail database
+Water_System_Detail <- read.csv("~/R_data/Water_System_Detail.csv", header=FALSE)
+#View(Water_System_Detail)
+```
+
+
+```{r}
+#Delete columns
+#To be able to use the geocoder, the input file needs to have the following fields only: ID, Address (Street number and name of street), City, State, and Zip Code.
+
+#library(dplyr)
+WSD = select(Water_System_Detail, -c(2:29, 35:37))
+```
+
+```{r}
+#Merge columns
+#There are two Address columns, we need to merge them so we only have one.
+WSD = unite(WSD, Address, c(2,3))
+```
+
+```{r}
+#Filter data
+#Delete rows that include PO Boxes, or N/A cells
+WSD <- WSD %>%
+filter(!grepl("P.O. BOX", Address, ignore.case = T),
+       !grepl("PO BOX", Address, ignore.case = T), 
+       !grepl("PO Box", Address, ignore.case = T),
+       !grepl("P O Box", Address, ignore.case = T),
+       !grepl("Box", Address, ignore.case = T),
+       !grepl("P. O. BOX", Address, ignore.case = T),
+       !grepl("P.O.", Address, ignore.case = T),
+       !grepl("PO DRAWER", Address, ignore.case = T),
+       !grepl("POST OFFICE BOX", Address, ignore.case = T),
+       !grepl("POST OFFICE DRAWER", Address, ignore.case = T),
+       !grepl("POB", Address, ignore.case = T),
+       !grepl("N A", Address, ignore.case = T))
+```
+
+```{r}
+#Split dataframe according to geocoder requirements
+#The Census Geocoder only allows CSV documents with 10,000 values max. Depending on the total of observation points, you need to split the dataframe.
+WSD_a <- slice(WSD[1:9990,], .preserve = TRUE )
+WSD_b <- slice(WSD[9991:19981,], .preserve = TRUE)
+WSD_c <- slice(WSD[19982:28315,], .preserve = TRUE)
+```
+
+```{r}
+#Delete columns name
+#File WSD_a
+x1<-WSD_a$V1
+x2<-WSD_a$Address
+x3<-WSD_a$V32
+x4<-WSD_a$V33
+x5<-WSD_a$V34
+WSD_a<-data.frame(x1,x2,x3,x4,x5)
+names(WSD_a)<- NULL
+
+#File WSD_b
+x1<-WSD_b$V1
+x2<-WSD_b$Address
+x3<-WSD_b$V32
+x4<-WSD_b$V33
+x5<-WSD_b$V34
+WSD_b<-data.frame(x1,x2,x3,x4,x5)
+names(WSD_b)<- NULL
+
+#File WSD_c
+x1<-WSD_c$V1
+x2<-WSD_c$Address
+x3<-WSD_c$V32
+x4<-WSD_c$V33
+x5<-WSD_c$V34
+WSD_c<-data.frame(x1,x2,x3,x4,x5)
+names(WSD_c)<- NULL
+```
+
+```{r}
+#Delete first row (only applies to first dataframe created, in this case, WSD_a)
+WSD_a <- WSD_a[-c(1), ] 
+```
+
+```{r}
+#Create CSV files for multiple dataframes
+myList <- list(WSD_a = WSD_a, 
+               WSD_b = WSD_b,
+               WSD_c = WSD_c)
+mapply(write.csv, row.names=FALSE, myList, file=paste0(names(myList), '.csv'))
+
+
+# Input files WSD_a.csv, WSD_b.csv, and WSD_c.csv into Geocoder
+```
+
+
