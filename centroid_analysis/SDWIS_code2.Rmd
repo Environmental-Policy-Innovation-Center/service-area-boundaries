@@ -1,0 +1,101 @@
+---
+title: "SDWIS_code_2"
+output: html_notebook
+---
+
+```{r}
+# This code eliminates the names of people and companies in the Address column. This step improves the geocoder results.
+```
+
+```{r}
+library(tidyverse)
+
+#Import original dataframes
+
+WSD_a <- read.csv("~/R_data/WSD_a.csv", header=FALSE)
+#View(WSD_a)
+
+WSD_b <- read.csv("~/R_data/WSD_b.csv", header=FALSE)
+#View(WSD_b)
+
+WSD_c <- read.csv("~/R_data/WSD_c.csv", header=FALSE)
+#View(WSD_c)
+```
+
+```{r}
+#Change name of columns for clarity (necessary for next step)
+
+colnames(WSD_a) <- c("PWSID", "Address", "City", "State", "Zip Code")
+
+colnames(WSD_b) <- c("PWSID", "Address", "City", "State", "Zip Code")
+
+colnames(WSD_c) <- c("PWSID", "Address", "City", "State", "Zip Code")
+```
+
+
+```{r}
+#Delete names from Address column (tidyverse)
+# NN = No Names
+
+WSD_a_NN <- WSD_a %>%
+  mutate(Address = sub("^\\D+(\\d)", "\\1", Address))
+
+WSD_b_NN <- WSD_b %>%
+  mutate(Address = sub("^\\D+(\\d)", "\\1", Address))
+
+WSD_c_NN <- WSD_c %>%
+  mutate(Address = sub("^\\D+(\\d)", "\\1", Address))
+```
+
+```{r}
+#Remove column names 
+#This format change is needed for the geocoder to work
+
+#File WSD_a_NN
+x1<-WSD_a_NN$PWSID
+x2<-WSD_a_NN$Address
+x3<-WSD_a_NN$City
+x4<-WSD_a_NN$State
+x5<-WSD_a_NN$`Zip Code`
+WSD_a_NN<-data.frame(x1,x2,x3,x4,x5)
+names(WSD_a_NN)<- NULL
+
+#File WSD_b_NN
+x1<-WSD_b_NN$PWSID
+x2<-WSD_b_NN$Address
+x3<-WSD_b_NN$City
+x4<-WSD_b_NN$State
+x5<-WSD_b_NN$`Zip Code`
+WSD_b_NN<-data.frame(x1,x2,x3,x4,x5)
+names(WSD_b_NN)<- NULL
+
+#File WSD_c_NN
+x1<-WSD_c_NN$PWSID
+x2<-WSD_c_NN$Address
+x3<-WSD_c_NN$City
+x4<-WSD_c_NN$State
+x5<-WSD_c_NN$`Zip Code`
+WSD_c_NN<-data.frame(x1,x2,x3,x4,x5)
+names(WSD_c_NN)<- NULL
+```
+
+```{r}
+#Export dataframes as CSV files
+
+write.csv(WSD_a_NN,"~/R_data/WSD_a_NN.csv", row.names = FALSE)
+
+write.csv(WSD_b_NN,"~/R_data/WSD_b_NN.csv", row.names = FALSE)
+
+write.csv(WSD_c_NN,"~/R_data/WSD_c_NN.csv", row.names = FALSE)
+```
+
+```{r}
+# Input created CSV files into the U.S. Census Geocoder
+```
+
+
+
+
+
+
+
