@@ -1,0 +1,92 @@
+---
+title: "SDWIS_code3"
+output: html_notebook
+---
+
+```{r}
+# Use this code once you get the output files from the geocoder. Rename files accordingly.
+
+#Load geocoded dataframes GEO_WSD_a, GEO_WSD_b, GEO_WSD_c
+
+
+geocoded_column_names <- c("PWSID", "Address", "Match", "Exact/Non-exact", "Suggested address", "Longitude/Latitude", "C7", "C8")
+GEO_WSD_a <- read.csv("~/R_data/Geocode_results/GEO_WSD_a.csv", sep = ",", col_names = geocoded_column_names)
+
+
+GEO_WSD_a <- read_csv("~/R_data/Geocode_results/GEO_WSD_a.csv")
+#View(GEO_WSD_a)
+
+
+
+GEO_WSD_b <- read.csv("~/R_data/Geocode_results/GEO_WSD_b.csv", header=FALSE)
+#View(GEO_WSD_b)
+GEO_WSD_c <- read.csv("~/R_data/Geocode_results/GEO_WSD_c.csv", header=FALSE)
+#View(GEO_WSD_c)
+
+##Load geocoded dataframes GEO_WSD_a_NN, GEO_WSD_b_NN, GEO_WSD_c_NN
+
+GEO_WSD_a_NN <- read.csv("~/R_data/Geocode_results/GEO_WSD_a_NN.csv", header=FALSE)
+#View(GEO_WSD_a_NN)
+GEO_WSD_b_NN <- read.csv("~/R_data/Geocode_results/GEO_WSD_b_NN.csv", header=FALSE)
+#View(GEO_WSD_b_NN)
+GEO_WSD_c_NN <- read.csv("~/R_data/Geocode_results/GEO_WSD_c_NN.csv", header=FALSE)
+#View(GEO_WSD_c_NN)
+```
+
+```{r}
+#Insert column names to dataframes GEO_WSD_a, GEO_WSD_b, GEO_WSD_c
+colnames(GEO_WSD_a) <- c("PWSID", "Address", "Match", "Exact/NonExact", "Matched Address", "Coordinates", "V7", "V8")
+colnames(GEO_WSD_b) <- c("PWSID", "Address", "Match", "Exact/NonExact", "Matched Address", "Coordinates", "V7", "V8")
+colnames(GEO_WSD_c) <- c("PWSID", "Address", "Match", "Exact/NonExact", "Matched Address", "Coordinates", "V7", "V8")
+
+#Insert column names to dataframes GEO_WSD_a_NN, GEO_WSD_b_NN, GEO_WSD_c_NN
+colnames(GEO_WSD_a_NN) <- c("PWSID", "Address", "Match", "Exact/NonExact", "Matched Address", "Coordinates", "V7", "V8")
+colnames(GEO_WSD_b_NN) <- c("PWSID", "Address", "Match", "Exact/NonExact", "Matched Address", "Coordinates", "V7", "V8")
+colnames(GEO_WSD_c_NN) <- c("PWSID", "Address", "Match", "Exact/NonExact", "Matched Address", "Coordinates", "V7", "V8")
+```
+
+
+```{r}
+#Merge dataframes (GEO_WSD_a, GEO_WSD_b, GEO_WSD_c) into one
+GEO_WSD <- rbind(GEO_WSD_a, GEO_WSD_b, GEO_WSD_c, deparse.level = 1)
+
+#Merge dataframes (GEO_WSD_a_NN, GEO_WSD_b_NN, GEO_WSD_c_NN) into one
+GEO_WSD_NN <- rbind(GEO_WSD_a_NN, GEO_WSD_b_NN, GEO_WSD_c_NN, deparse.level = 1)
+```
+
+```{r}
+#Delete columns not needed from geocoder
+GEO_WSD = select(GEO_WSD, -c(7, 8))
+GEO_WSD_NN = select(GEO_WSD_NN, -c(7, 8))
+```
+
+```{r}
+#Split in two columns, coordinates column
+GEO_WSD <- separate(GEO_WSD, Coordinates, into = c("Longitude","Latitude"), sep = ",", extra = "merge")
+GEO_WSD_NN <- separate(GEO_WSD_NN, Coordinates, into = c("Longitude","Latitude"), sep = ",", extra = "merge")
+```
+
+
+```{r}
+#Filter empty Lat and Long values to be able to do the next step
+GEO_WSD <- drop_na(GEO_WSD, Latitude)
+GEO_WSD_NN <- drop_na(GEO_WSD_NN, Latitude)
+```
+
+
+```{r}
+#Transform lat, long coordinates into a geometry column so the data is a geospatial layer
+GEO_WSD = st_as_sf(GEO_WSD, coords = c("Longitude","Latitude"), remove = FALSE)
+GEO_WSD_NN = st_as_sf(GEO_WSD_NN, coords = c("Longitude","Latitude"), remove = FALSE)
+```
+
+
+```{r}
+#Write CSV for GEO_WSD
+write.csv(GEO_WSD,"~/R_data/Geocode_results/GEO_WSD.csv", row.names = FALSE)
+
+#Write CSV for GEO_WSD_NN
+write.csv(GEO_WSD_NN,"~/R_data/Geocode_results_NN/GEO_WSD_NN.csv", row.names = FALSE)
+```
+
+
