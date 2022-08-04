@@ -56,6 +56,17 @@ SDWIS_geocoder_2 <- slice(SDWIS_geocoder, 10001:20000)
 SDWIS_geocoder_3 <- slice(SDWIS_geocoder, 20001:length(SDWIS_geocoder$PWSID))
 ```
 
+## Write csvs ready to geocode
+
+```{r}
+fwrite(SDWIS_geocoder_1, "./centroid_analysis/output/SDWIS_addresses_1.csv",
+       col.names = F)
+fwrite(SDWIS_geocoder_2, "./centroid_analysis/output/SDWIS_addresses_2.csv",
+       col.names = F)
+fwrite(SDWIS_geocoder_3, "./centroid_analysis/output/SDWIS_addresses_3.csv",
+       col.names = F)
+```
+
 
 ```{r}
 #Set working directory
