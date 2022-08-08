@@ -1,0 +1,65 @@
+---
+title: "TEST"
+author: "Leslie Bernal"
+date: '2022-07-20'
+output: html_document
+---
+
+```{r}
+#Change pwsid name on TIER2
+colnames(TIER2)[1] <- "PWSID"
+```
+
+```{r}
+#Create merged file between ECHO and TIER that includes common PWSID
+
+ECHO_vs_TIER <- merge(ECHO_2, TIER2, by=c("PWSID"), all.x = FALSE)
+#View(ECHO_vs_TIER)
+
+#Write CSV for ECHO_vs_TIER
+write.csv(ECHO_vs_TIER,"~/R_data/ECHO_vs_TIER.csv", row.names = FALSE)
+```
+
+```{r}
+#Create merged file between SDWIS and TIER that includes common PWSID
+
+SDWIS_vs_TIER <- merge(GEO_WSD_NoNames, TIER2, by=c("PWSID"), all.x = FALSE)
+
+#Write CSV for SDWIS_vs_TIER
+write.csv(SDWIS_vs_TIER,"~/R_data/SDWIS_vs_TIER.csv", row.names = FALSE)
+```
+
+```{r}
+#Create files for QGIS, ECHO values only, but that share the same PWSID
+
+ECHO_common <- subset(ECHO_vs_TIER, select = -c(10:13))
+
+#Write CSV for ECHO_common
+write.csv(ECHO_common,"~/R_data/ECHO_common.csv", row.names = FALSE)
+```
+
+```{r}
+#Create files for QGIS, SDWIS values only, but that share the same PWSID
+
+SDWIS_common <- subset(SDWIS_vs_TIER, select = -c(9:12))
+
+#Write CSV for ECHO_common
+write.csv(SDWIS_common,"~/R_data/SDWIS_common.csv", row.names = FALSE)
+```
+
+```{r}
+#Create files for QGIS, TIER values only, but that share the same PWSID
+
+TIER_common <- subset(SDWIS_vs_TIER, select = -c(2:8))
+
+#Write CSV for ECHO_common
+write.csv(TIER_common,"~/R_data/TIER_common.csv", row.names = FALSE)
+```
+
+
+
+
+
+
+
+
