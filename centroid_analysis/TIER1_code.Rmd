@@ -1,0 +1,46 @@
+---
+title: "TIER1_code"
+author: "Leslie Bernal"
+date: '2022-07-19'
+output: html_document
+---
+
+```{r}
+#Import dataframe
+TIER1 <- read.csv("~/R_data/TIER1.csv", header=FALSE)
+#View(TIER1)
+```
+
+```{r}
+#Delete columns
+TIER2 = select(TIER1, -c(2:13,18:22))
+```
+
+```{r}
+#Rename columns
+colnames(TIER2) <- c("pwsid", "tier", "cntrd_lat", "cntrd_lon", "cntrd_qual")
+```
+
+```{r}
+#Delete first row
+TIER2 <- TIER2[-c(1), ] 
+```
+
+```{r}
+#Filter by Tier 1 classification
+TIER2 <- TIER2 %>%
+filter(grepl("Tier 1", tier, ignore.case = T))
+```
+
+```{r}
+#Delete fields containing MO and NC
+TIER2 <- TIER2 %>%
+filter(!grepl("MO", pwsid, ignore.case = T),
+       !grepl("NC", pwsid, ignore.case = T))
+```
+
+```{r}
+#Write CSV for TIER2
+write.csv(TIER2,"~/R_data/TIER2.csv", row.names = FALSE)
+```
+
