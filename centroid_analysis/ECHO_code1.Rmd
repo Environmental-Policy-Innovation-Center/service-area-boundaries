@@ -1,0 +1,62 @@
+---
+title: "ECHO_code1"
+author: "Leslie Bernal"
+date: '2022-07-19'
+output: html_document
+---
+
+```{r}
+#Import ECHO dataframe
+library(readr)
+
+ECHO_EXPORTER <- read_csv("ECHO_EXPORTER.csv")
+#View(ECHO_EXPORTER)
+```
+
+```{r}
+#Delete columns
+ECHO_1 = select(ECHO_EXPORTER, -c(1,2,7:14,17:104,107:134))
+```
+
+```{r}
+#Change order of columns
+ECHO_1 <- ECHO_1[, c(7,1,2,3,4,5,6,8)]
+```
+
+```{r}
+#Filter by Active Community Water Systems
+ECHO_2 <- ECHO_1 %>%
+filter(grepl("Community water system", SDWA_SYSTEM_TYPES, ignore.case = T))
+```
+
+```{r}
+#Filter for systems missing Latitude and Longitude
+ECHO_2 <- drop_na(ECHO_2, FAC_LAT)
+```
+
+```{r}
+#Filter for missing addresses
+ECHO_2 <- drop_na(ECHO_2, FAC_STREET)
+```
+
+```{r}
+#Filter for missing ZIP codes
+ECHO_2 <- drop_na(ECHO_2, FAC_ZIP)
+```
+
+```{r}
+#Change first column name (for processing later)
+colnames(ECHO_2)[1] <- "PWSID"
+```
+
+```{r}
+#Transform lat, long coordinates into a geometry column so the data is a geospatial layer
+ECHO_2 = st_as_sf(ECHO_2, coords = c("FAC_LAT","FAC_LONG"), remove = FALSE)
+```
+
+```{r}
+#Write CSV for ECHO_2
+write.csv(ECHO_2,"~/R_data/ECHO_2.csv", row.names = FALSE)
+```
+
+
