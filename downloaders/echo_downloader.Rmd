@@ -24,14 +24,40 @@ library(plotly)
 library(cowplot)
 library(openxlsx)
 library(xml2)
-library(tictoc)
 ```
 
 ## Read in ECHO data
 
 ECHO data is the echo-exporter zip downloaded from https://echo.epa.gov/files/echodownloads/
+The code below reads in the ECHO data
 
 ```{r}
+## url of echo data is https://echo.epa.gov/files/echodownloads/echo_exporter.zip
+
+## create temporary file
+temp <- tempfile()
+
+## download file
+## zip file is large, so the timeout needs to be increased from 60 seconds
+options(timeout = 300)
+download.file("https://echo.epa.gov/files/echodownloads/echo_exporter.zip",temp)
+
+## read data from file within zipped folder
+ECHO_Raw <- fread(unzip(temp, files = "ECHO_EXPORTER.csv"))
+unlink(temp)
+```
+
+This section of code reads in only the columns of the ECHO data specified
+
+```{r}
+## create temporary file
+temp <- tempfile()
+
+## download file
+## zip file is large, so the timeout needs to be increased from 60 seconds
+options(timeout = 300)
+download.file("https://echo.epa.gov/files/echodownloads/echo_exporter.zip",temp)
+
 ## Names of echo columns to be used when reading the data
 
 ECHO_cols <- c('REGISTRY_ID', 'FAC_NAME', 'FAC_STREET',
@@ -50,7 +76,8 @@ ECHO_cols <- c('REGISTRY_ID', 'FAC_NAME', 'FAC_STREET',
 
 ## read in echo data, only reading in the columns in ECHO_cols
 
-ECHO_Raw <- fread("../DATA/ECHO/echo_exporter/ECHO_EXPORTER.csv", select = ECHO_cols)
+ECHO_Select <- fread(unzip(temp, files = "ECHO_EXPORTER.csv"), select = ECHO_cols)
+unlink(temp)
 ```
 
 ## Water System Centroids
@@ -59,7 +86,7 @@ Column SDWA_IDS contains PWSIDs for facilities that are water systems
 
 ```{r}
 ## filter ECHO data for water systems
-ECHO_Water_Systems <- ECHO_Raw %>%
+ECHO_Water_Systems <- ECHO_Select %>%
   filter(SDWIS_FLAG == "Y")
 
 ## filter water systems for active water systems (systems that are not inactive)

@@ -1,0 +1,109 @@
+---
+title: "Echo Downloader"
+author: "Walker Grimshaw"
+date: "2022-07-27"
+output: pdf_document
+geometry: margin=2.54cm
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(data.table)
+library(tidyverse)
+library(sf)
+library(raster)
+library(readxl)
+library(fs)
+library(stringi)
+library(lubridate)
+library(units)
+library(plotly)
+library(cowplot)
+library(openxlsx)
+library(xml2)
+```
+
+## Read in ECHO data
+
+ECHO data is the echo-exporter zip downloaded from https://echo.epa.gov/files/echodownloads/
+The code below reads in the ECHO data
+
+```{r}
+## url of echo data is https://echo.epa.gov/files/echodownloads/echo_exporter.zip
+
+## create temporary file
+temp <- tempfile()
+
+## download file
+## zip file is large, so the timeout needs to be increased from 60 seconds
+options(timeout = 300)
+download.file("https://echo.epa.gov/files/echodownloads/echo_exporter.zip",temp)
+
+## read data from file within zipped folder
+ECHO_Raw <- fread(unzip(temp, files = "ECHO_EXPORTER.csv"))
+unlink(temp)
+```
+
+This section of code reads in only the columns of the ECHO data specified
+
+```{r}
+## create temporary file
+temp <- tempfile()
+
+## download file
+## zip file is large, so the timeout needs to be increased from 60 seconds
+options(timeout = 300)
+download.file("https://echo.epa.gov/files/echodownloads/echo_exporter.zip",temp)
+
+## Names of echo columns to be used when reading the data
+
+ECHO_cols <- c('REGISTRY_ID', 'FAC_NAME', 'FAC_STREET',
+          'FAC_CITY', 'FAC_STATE', 'FAC_ZIP', 'FAC_COUNTY',
+          'FAC_FIPS_CODE', 'FAC_LAT', 'FAC_LONG', 'FAC_INDIAN_CNTRY_FLG',
+          'FAC_FEDERAL_FLG',  'FAC_COLLECTION_METHOD',
+          'FAC_REFERENCE_POINT', 'FAC_ACCURACY_METERS',
+          'FAC_DERIVED_HUC', 'FAC_MAJOR_FLAG', 'FAC_ACTIVE_FLAG',
+          'FAC_QTRS_WITH_NC', 'SDWIS_FLAG', 'SDWA_IDS',
+          'SDWA_SYSTEM_TYPES', 'SDWA_INFORMAL_COUNT',
+          'SDWA_FORMAL_ACTION_COUNT', 'SDWA_COMPLIANCE_STATUS',
+          'SDWA_SNC_FLAG', 'FAC_DERIVED_TRIBES',
+          'FAC_DERIVED_WBD', 'FAC_DERIVED_STCTY_FIPS',
+          'FAC_DERIVED_ZIP', 'FAC_DERIVED_CD113', 'FAC_DERIVED_CB2010',
+          'FAC_PERCENT_MINORITY', 'FAC_POP_DEN', 'EJSCREEN_FLAG_US')
+
+## read in echo data, only reading in the columns in ECHO_cols
+
+ECHO_Select <- fread(unzip(temp, files = "ECHO_EXPORTER.csv"), select = ECHO_cols)
+unlink(temp)
+```
+
+## Water System Centroids
+
+Column SDWA_IDS contains PWSIDs for facilities that are water systems
+
+```{r}
+## filter ECHO data for water systems
+ECHO_Water_Systems <- ECHO_Select %>%
+  filter(SDWIS_FLAG == "Y")
+
+## filter water systems for active water systems (systems that are not inactive)
+## and systems that are community water systems
+## Note that some systems apparently have multiple system types, so using the str_detect
+## returns 98 more systems than the ones that are only Community water system type
+ECHO_Active_CWS <- ECHO_Water_Systems %>%
+  filter(SDWA_COMPLIANCE_STATUS != "Inactive",
+         str_detect(SDWA_SYSTEM_TYPES, fixed("Community")),
+         #SDWA_SYSTEM_TYPES == "Community water system"
+         )
+```
+
+## Write ECHO location data to output folder
+
+```{r}
+fwrite(ECHO_Active_CWS,
+       "./centroid_analysis/output/echo_active_cws.csv")
+```
+
