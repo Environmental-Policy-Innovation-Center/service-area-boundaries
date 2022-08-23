@@ -1,6 +1,7 @@
 ---
-title: "SDWIS_code1"
-output: html_notebook
+title: "SDWIS Geocoder"
+output: pdf_document
+geometry: margin=2.54cm
 editor_options: 
   chunk_output_type: console
 ---

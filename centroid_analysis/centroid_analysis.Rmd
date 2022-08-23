@@ -1,0 +1,121 @@
+---
+title: "Centroid Analysis"
+author: "Walker Grimshaw"
+date: "2022-08-22"
+output: pdf_document
+geometry: margin=2.54cm
+editor_options: 
+  chunk_output_type: console
+---
+
+## Load Relevant Packages
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(data.table)
+library(tidyverse)
+library(sf)
+library(raster)
+library(readxl)
+library(fs)
+library(stringi)
+library(lubridate)
+library(units)
+library(plotly)
+library(cowplot)
+library(openxlsx)
+library(xml2)
+library(censusxy)
+```
+
+## Read temm, sdwis, and echo data
+
+```{r}
+## TEMM data
+temm <- fread("./centroid_analysis/output/temm.csv")
+
+## SDWIS centroids
+sdwis <- fread("./centroid_analysis/output/SDWIS_geocode_results.csv")
+
+## ECHO centroids
+echo <- fread("./centroid_analysis/output/echo_active_cws.csv")
+```
+
+## Filter for tier 1 systems that have sdwis centroids
+
+```{r}
+temm_tier_1 <- temm %>%
+  ## tier 1 systems
+  filter(tier == "Tier 1",
+         ## get rid of MO and NC because of prevalence of county systems
+         !state_code %in% c("NC", "MO"))
+
+## sdwis systems with addresses that geocoded successfully and have tier 1 boundaries
+sdwis_tier_1_match <- sdwis %>%
+  ## systems with matches
+  filter(cxy_status == "Match",
+         ## tier one boundary
+         PWSID %in% temm_tier_1$pwsid,
+         ## have echo centroid
+         PWSID %in% echo$SDWA_IDS)
+
+## echo systems with sdwis matches and tier boundaries
+echo_tier_1_match <- echo %>%
+    ## systems with matches
+  filter(SDWA_IDS %in% sdwis_tier_1_match$PWSID,
+         ## systems that have lat and long data
+         !is.na(FAC_LAT),
+         !is.na(FAC_LONG))
+
+## filter tier 1 temm for systems that also have sdwis and echo centroids
+temm_tier_1_match <- temm_tier_1 %>%
+  filter(pwsid %in% echo_tier_1_match$SDWA_IDS)
+
+## filter sdwis for systems with echo lat and long
+sdwis_tier_1_match_echo <- sdwis_tier_1_match %>%
+  filter(PWSID %in% echo_tier_1_match$SDWA_IDS)
+```
+
+## Convert dataframes to simple features
+
+```{r}
+temm_sf <- st_as_sf(temm_tier_1_match,
+                    coords = c("centroid_lon", "centroid_lat"))
+
+sdwis_sf <- st_as_sf(sdwis_tier_1_match,
+                     coords = c("cxy_lon", "cxy_lat")) %>%
+  rename(pwsid = PWSID)
+
+echo_sf <- st_as_sf(echo_tier_1_match,
+                    coords = c("FAC_LONG", "FAC_LAT")) %>%
+  rename(pwsid = SDWA_IDS)
+```
+
+## Test distance matrix with small subset of systems
+
+```{r}
+sdwis_temm_distance <- sdwis_sf %>%
+  ## bind rows with temm simple feature
+  bind_rows(temm_sf) %>%
+  ## keep only relevant columns
+  select(pwsid, geometry) %>%
+  ## group by pwsid for distance calcs
+  group_by(pwsid) %>%
+  ## create lead column which is the geometry of the pair
+  mutate(lead = geometry[row_number() + 1],
+         dist = st_distance(geometry, lead, by_element = T))
+
+echo_temm_distance <-  echo_sf %>%
+  ## bind rows with temm simple feature
+  bind_rows(temm_sf) %>%
+  ## keep only relevant columns
+  select(pwsid, geometry) %>%
+  ## group by pwsid for distance calcs
+  group_by(pwsid) %>%
+  ## create lead column which is the geometry of the pair
+  mutate(lead = geometry[row_number() + 1],
+         dist = st_distance(geometry, lead, by_element = T))
+  
+```
+

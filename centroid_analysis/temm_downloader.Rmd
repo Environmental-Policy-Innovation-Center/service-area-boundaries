@@ -1,0 +1,50 @@
+---
+title: "temm_downloader"
+author: "Walker Grimshaw"
+date: "2022-08-22"
+output: pdf_document
+geometry: margin=2.54cm
+editor_options: 
+  chunk_output_type: console
+---
+
+## Load Relevant Packages
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(data.table)
+library(tidyverse)
+library(sf)
+library(raster)
+library(readxl)
+library(fs)
+library(stringi)
+library(lubridate)
+library(units)
+library(plotly)
+library(cowplot)
+library(openxlsx)
+library(xml2)
+```
+
+## Read TEMM data from Hydroshare
+
+```{r}
+temm_v2_raw <- st_read("https://www.hydroshare.org/resource/20b908d73a784fc1a097a3b3f2b58bfb/data/contents/temm.geojson")
+```
+
+## Create dataframe from simple feature by removing geometry column
+
+```{r}
+temm_v2_df <- temm_v2_raw %>%
+  st_drop_geometry()
+```
+
+## Write csv to output
+
+```{r}
+fwrite(temm_v2_df,
+       "./centroid_analysis/output/temm.csv")
+```
+
